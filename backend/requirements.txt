@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+fastf1
+polars
+duckdb
+matplotlib
+psutil
+open_clip_torch
+faiss-cpu
+torch
+transformers
+accelerate
+bitsandbytes
+xgrammar
+pydantic

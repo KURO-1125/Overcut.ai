@@ -1,0 +1,53 @@
+# Environments
+venv/
+.env
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# Data & ML Models (Never commit massive datasets or model weights)
+data/raw_cache/
+data/generated_roi/
+*.safetensors
+*.bin
+*.h5
+*.pt
+*.onnx
+
+# Vector Databases
+*.index
+
+# Node / React Frontend
+node_modules/
+dist/
+.npm/
+npm-debug.log*
+.eslintcache
+.vite/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Databases
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
