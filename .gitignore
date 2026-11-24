@@ -36,6 +36,13 @@ data/db/
 # Benchmark run artifacts (regenerate with scripts/run_golden_inference.py)
 models/ev_qlora_adapter/predictions*.jsonl
 
+# Brag video working files (deliverables live in docs/media/)
+brag-output/
+
+# Personal / submission material kept out of the public repo
+VIVA_PREPARATION_BRIEFING.md
+Overcut.ai Final PRD.pdf
+
 # Vector Databases
 *.index
 
