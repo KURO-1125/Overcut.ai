@@ -23,9 +23,9 @@ No rewrites are needed: the app routes in state, so every URL serves
 
 1. huggingface.co → **New Space** → SDK **Docker** → *Blank* → name it
    `overcut-api`. Public is fine (the API has no secrets).
-2. Upload the two files from [`deploy/hf-space/`](deploy/hf-space) to the Space
-   repo root: `Dockerfile` and `README.md` (web UI: *Files → Add file*, or
-   `git clone` the Space and copy them in).
+2. Upload the three files from [`deploy/hf-space/`](deploy/hf-space) to the
+   Space repo root: `Dockerfile`, `README.md` and `start.sh` (web UI:
+   *Files → Add file*, or `git clone` the Space and copy them in).
 3. Space **Settings → Variables**:
    - `OVERCUT_CORS_ORIGINS` = `https://<your-vercel-domain>`
    - optional: `OVERCUT_API_KEY` (then also set `VITE_API_KEY` in Vercel — note
