@@ -1,10 +1,18 @@
-# Deploying Overcut.ai (free tier)
+# Deploying Overcut.ai
 
-Current target: **frontend on Vercel + API on a Hugging Face Docker Space**, both
-free. The API runs CPU-only, so diagnosis is served by the labelled
+Two-part deployment: **frontend on Vercel Hobby (free)** and the **API as a
+Docker image**, currently targeted at a Hugging Face Docker Space but
+host-agnostic. The API runs CPU-only, so diagnosis is served by the labelled
 `DETERMINISTIC_HEURISTIC` engine; the 7B QLoRA tier stays local until the AWS
-migration. Everything here is a placeholder for that move — nothing in the code
-is Vercel- or HF-specific.
+migration.
+
+> **Cost note (verified 2026-11-24).** Vercel Hobby is free. On Hugging Face,
+> only *Static* Spaces are free; per the official Spaces docs, "Gradio and Docker
+> Spaces run on compute and require a paid plan to create: PRO for personal
+> accounts". CPU Basic hardware itself carries no hourly cost, and Spaces on free
+> hardware sleep when idle. So the Docker Space below needs an HF PRO plan —
+> earlier notes in this file calling it free were wrong. Zero-cost options are
+> listed in §3.
 
 ## 1. Frontend — Vercel
 
@@ -19,9 +27,10 @@ is Vercel- or HF-specific.
 No rewrites are needed: the app routes in state, so every URL serves
 `index.html`.
 
-## 2. API — Hugging Face Space (Docker, CPU)
+## 2. API — Hugging Face Space (Docker, CPU) — requires HF PRO
 
-1. huggingface.co → **New Space** → SDK **Docker** → *Blank* → name it
+Steps below assume an HF PRO plan; creating a Docker Space is refused on a free
+account.1. huggingface.co → **New Space** → SDK **Docker** → *Blank* → name it
    `overcut-api`. Public is fine (the API has no secrets).
 2. Upload the three files from [`deploy/hf-space/`](deploy/hf-space) to the
    Space repo root: `Dockerfile`, `README.md` and `start.sh` (web UI:
@@ -43,9 +52,20 @@ No rewrites are needed: the app routes in state, so every URL serves
 The Dockerfile clones `main` from GitHub at build time. After pushing backend
 changes, open the Space → **Factory rebuild**.
 
-## 3. What works / what does not on the free tier
+## 3. Hosting options and cost (verified 2026-11-24)
 
-| Feature | Free tier behaviour |
+| Option | Cost | Notes |
+| :--- | :--- | :--- |
+| Vercel Hobby (frontend) | Free | Static hosting; the app works without the API, labelling data `SIMULATED` |
+| HF Docker Space, CPU Basic | HF PRO (paid) | Configs in `deploy/hf-space/` build and smoke-test cleanly; 2 vCPU / 16 GB; sleeps when idle; set `OVERCUT_JWT_SECRET` = `SPACE_SIGNING_SECRET` (stable across restarts) |
+| Free HF account, Gradio SDK | Free (up to 2 Spaces on ZeroGPU) | Only Gradio Spaces are permitted on free accounts. Serving this FastAPI app on port 7860 from a Gradio entry script is possible but untested and fragile |
+| Render free web service | Free | 512 MB RAM, spins down when idle — too small for torch + OpenCLIP, would need a heuristic-only image |
+| Local backend + Cloudflare quick tunnel | Free, no account | Public HTTPS URL while the laptop runs; URL changes per start; fine for a live demo |
+| AWS (App Runner / ECS Fargate; EC2 `g5` for the local 7B tier) | Pending credits | Same Docker image; only `VITE_API_URL` and `OVERCUT_CORS_ORIGINS` change |
+
+### What works on any CPU host
+
+| Feature | Behaviour |
 | :--- | :--- |
 | Landing pages, workspaces, chart interactions | Fully static on Vercel |
 | Telemetry streams | Served by the API's synthetic generators |
