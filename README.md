@@ -7,7 +7,7 @@ fault code, severity, per-channel citations, retrieved historical precedents and
 a corrective action — from a 7B QLoRA model running locally in 5.47 GB of VRAM,
 or from a labelled deterministic fallback when no GPU is available.
 
-[![Overcut.ai launch film](docs/media/brag-poster.jpg)](docs/media/brag.mp4)
+https://github.com/user-attachments/assets/c37fa02d-955a-4fc4-9c57-825b038478da
 
 <sub>20-second launch film — click the poster to play (1920×1080, H.264, 2 MB).</sub>
 
