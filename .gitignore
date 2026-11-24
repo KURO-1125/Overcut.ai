@@ -1,6 +1,8 @@
 # Environments
 venv/
 .env
+.env.*
+!.env.example
 .venv/
 env/
 
@@ -14,15 +16,25 @@ dist/
 *.egg-info/
 .eggs/
 *.egg
+.pytest_cache/
+.coverage
+htmlcov/
 
 # Data & ML Models (Never commit massive datasets or model weights)
 data/raw_cache/
 data/generated_roi/
+data/db/
 *.safetensors
 *.bin
 *.h5
 *.pt
+*.pth
 *.onnx
+*.gguf
+*.log
+
+# Benchmark run artifacts (regenerate with scripts/run_golden_inference.py)
+models/ev_qlora_adapter/predictions*.jsonl
 
 # Vector Databases
 *.index

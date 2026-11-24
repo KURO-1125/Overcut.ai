@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend tests & evaluation checks
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: .
+      OVERCUT_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        run: python -m pip install --quiet uv
+
+      - name: Cache uv packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('backend/requirements.lock') }}
+
+      - name: Cache OpenCLIP weights
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/clip
+            ~/.cache/huggingface
+          key: openclip-vit-b-32-laion2b
+
+      # The lockfile is universal; --torch-backend cpu avoids downloading
+      # multi-gigabyte CUDA wheels on runners without a GPU.
+      - name: Install locked dependencies
+        run: uv pip sync backend/requirements.lock --torch-backend cpu --system
+
+      - name: Verify dependency consistency
+        run: python -m pip check
+
+      - name: Run test suite (includes golden-set validation)
+        run: python -m pytest tests/ -q
+
+      - name: Verify evaluation harness reports an unmeasured state
+        run: python scripts/evaluate_qlora.py --dataset data/eval/golden_ev_v1.json
+
+  frontend:
+    name: Frontend lint & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build

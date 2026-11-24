@@ -1,0 +1,36 @@
+{
+  "name": "overcut-golden-ev",
+  "version": 1,
+  "created_utc": "2026-11-20T17:20:36Z",
+  "generator": "scripts/build_golden_set.py",
+  "seed": 1337,
+  "dataset_sha256": "39f354b0b80d59ddd7c0e46d833fbdd0084ff593ef11287526f77fd772a56b41",
+  "dataset": "data\\eval\\golden_ev_v1.json",
+  "counts": {
+    "total": 200,
+    "by_dtc": {
+      "NOMINAL": 40,
+      "P0A1F": 40,
+      "P0A7F": 40,
+      "P0A80": 40,
+      "P0B3C": 40
+    },
+    "by_severity": {
+      "CRITICAL": 40,
+      "HIGH": 80,
+      "LOW": 40,
+      "MEDIUM": 40
+    },
+    "negatives": 40
+  },
+  "label_schema": {
+    "dtc_code": "SAE J2012 P0xxx or null for nominal cycles",
+    "severity": "LOW | MEDIUM | HIGH | CRITICAL",
+    "abstain": "true when the correct behavior is to report no critical anomaly"
+  },
+  "known_gaps": [
+    "No F1 golden set yet: labeled F1 windows require expert review of real FastF1 slices.",
+    "Images come from the same synthetic renderer family as the training data; treat visual scores as internal consistency, not real-world generality.",
+    "Labels are derived from generated failure modes, not from physical cell measurements."
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "status": "not_trained",
+  "note": "No EV QLoRA adapter weights exist in this directory. This harness only exports LoRA configuration metadata; measured metrics come from scripts/evaluate_qlora.py against data/eval/golden_ev_v1.json.",
+  "samples_available": 102,
+  "epochs_requested": 3,
+  "quantization_bits": null
+}

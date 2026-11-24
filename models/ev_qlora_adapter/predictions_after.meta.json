@@ -1,0 +1,22 @@
+{
+  "dataset": "data\\eval\\golden_ev_v1.json",
+  "dataset_sha256": "39f354b0b80d59ddd7c0e46d833fbdd0084ff593ef11287526f77fd772a56b41",
+  "manifest_sha256": "39f354b0b80d59ddd7c0e46d833fbdd0084ff593ef11287526f77fd772a56b41",
+  "samples": 200,
+  "output": "models\\ev_qlora_adapter\\predictions_after.jsonl",
+  "batch_size": 4,
+  "max_new_tokens": 320,
+  "decoding": "greedy (do_sample=false, repetition_penalty=1.1)",
+  "history": "none (retrieval excluded to isolate model reasoning)",
+  "model_name": "Overcut-7B-QLoRA (NVIDIA GeForce RTX 5060 Laptop GPU)",
+  "adapter": "models\\adapters\\overcut-ev-7b-lora",
+  "base_model": "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+  "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
+  "vram_gb": 5.47,
+  "wall_time_s": 1824.9,
+  "first_attempt_valid": 200,
+  "corrective_retries": 0,
+  "provider_distribution": {
+    "LOCAL_VLM": 200
+  }
+}

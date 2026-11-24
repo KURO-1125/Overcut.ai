@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://overcut.ai/sitemap.xml

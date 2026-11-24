@@ -1,0 +1,2 @@
+Introducing Overcut.ai: drag a window on a 100 Hz telemetry trace and get a structured engineering diagnosis — DTC, severity, cited evidence — from a 7B QLoRA model running on-device in 5.47 GB of VRAM.
+One engine, two machines: Formula 1 waveforms and EV battery packs. Precision Diagnostics. At Race Speed.
