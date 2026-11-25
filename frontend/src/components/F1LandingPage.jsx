@@ -331,7 +331,7 @@ export default function F1LandingPage({ onLaunch, onBack }) {
   const STATS = [
     { icon: Map,      value: '24',         unit: 'Circuits',  label: 'FIA 2025 Calendar' },
     { icon: Activity, value: '100',        unit: 'Hz',        label: 'Sampling Rate' },
-    { icon: Flag,     value: '2023–26',    unit: '',          label: 'Season Coverage' },
+    { icon: Flag,     value: '2025–26',    unit: '',          label: 'Season Coverage' },
     { icon: Cpu,      value: '7B',         unit: 'QLoRA',     label: 'On-Device AI' },
   ]
 
@@ -503,7 +503,7 @@ export default function F1LandingPage({ onLaunch, onBack }) {
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <StepCard number={1} icon={Search}  title="Select Session" body="Choose season, Grand Prix, session type and driver from the full 2023–2026 FIA calendar. Data loads from FastF1 at 100Hz resolution." />
+            <StepCard number={1} icon={Search}  title="Select Session" body="Choose season, Grand Prix, session type and driver from the 2025 and 2026 FIA calendars. Data loads from FastF1 at 100Hz resolution." />
             <StepCard number={2} icon={Scissors} title="Slice Anomaly"  body="Drag on the 100Hz telemetry chart to crop any micro-sector window. The system generates a waveform PNG artifact for CLIP embedding." />
             <StepCard number={3} icon={Cpu}      title="Get Diagnosis"  body="CLIP embeds the waveform, FAISS retrieves historical precedents, and the optional 7B QLoRA adapter (or deterministic heuristic fallback) returns a structured engineering report." />
           </div>
@@ -554,7 +554,7 @@ export default function F1LandingPage({ onLaunch, onBack }) {
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <FeatureCard icon={Activity} title="FastF1 Integration"    body="Direct API access to the FastF1 data pipeline with 100Hz car telemetry, track position, and tyre data for all 2023–2026 FIA sessions."  stat="FastF1 3.4.0" />
+            <FeatureCard icon={Activity} title="FastF1 Integration"    body="Direct API access to the FastF1 data pipeline with 100Hz car telemetry, track position, and tyre data for 2025 and 2026 FIA sessions."  stat="FastF1 3.4.0" />
             <FeatureCard icon={Database} title="OpenCLIP Embedding"    body="Waveform PNG crops encoded via OpenCLIP ViT-B/32 into 512-dimensional unit-sphere vectors for semantic similarity search."               stat="ViT-B-32 · 512-dim" />
             <FeatureCard icon={Shield}   title="FAISS Vector Search"   body="IndexFlatIP inner product similarity over the cosine-normalized embedding space for deterministic nearest-neighbor precedent retrieval."     stat="IndexFlatIP · Cosine Sim" />
             <FeatureCard icon={Cpu}      title="Hallucination Failsafe" body="A 0.65 confidence threshold gate rejects low-certainty model outputs before they surface to the engineer. Zero ungrounded diagnoses."       stat="0.65 Threshold" />

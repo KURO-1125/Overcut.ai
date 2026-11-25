@@ -12,11 +12,14 @@ from backend.data_engine.f1_calendar import (
 client = TestClient(app)
 
 def test_seasons_availability():
-    seasons = get_seasons()
-    assert 2025 in seasons
-    assert 2026 in seasons
-    assert 2024 in seasons
-    assert 2023 in seasons
+    assert get_seasons() == [2026, 2025]
+
+def test_unsupported_seasons_are_rejected():
+    for year in (2024, 2023, 2018):
+        with pytest.raises(ValueError):
+            get_season_calendar(year)
+        with pytest.raises(ValueError):
+            get_season_drivers(year)
 
 def test_2025_calendar_events():
     cal_2025 = get_season_calendar(2025)
@@ -80,7 +83,7 @@ def test_api_f1_seasons_endpoint():
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "success"
-    assert data["seasons"] == [2026, 2025, 2024, 2023]
+    assert data["seasons"] == [2026, 2025]
 
 def test_api_f1_calendar_endpoint():
     res = client.get("/api/f1/calendar?year=2025")
@@ -121,13 +124,14 @@ def test_api_telemetry_stream_specific_lap():
     assert data["lap_number"] == 15
     assert len(data["series"]) == 6
 
-def test_api_telemetry_stream_fastf1_multi_lap():
+def test_api_telemetry_stream_rejects_legacy_season():
     res = client.get("/api/telemetry/stream?year=2023&event=monaco&session_type=Q&driver=1")
-    assert res.status_code == 200
-    data = res.json()
-    assert data["status"] == "success"
-    assert "laps_summary" in data
-    assert len(data["laps_summary"]) >= 10
+    assert res.status_code == 400
+    assert "2023" in res.json()["detail"]
+
+def test_api_calendar_rejects_legacy_season():
+    res = client.get("/api/f1/calendar?year=2024")
+    assert res.status_code == 400
 
 def test_api_analyze_anomaly_2025_session():
     payload = {

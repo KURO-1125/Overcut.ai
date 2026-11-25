@@ -28,7 +28,7 @@ from backend.data_engine.f1_calendar import (
     get_season_drivers,
     get_seasons,
 )
-from backend.data_engine.ingestion import FastF1Processor
+from backend.data_engine.ingestion import FastF1Processor, has_cached_session
 from backend.vector_store.db import VectorDB, artifact_hash
 from backend.vector_store.engine import VectorEngine
 
@@ -125,7 +125,7 @@ def _analysis_slot():
 
 
 class AnomalyAnalysisRequest(BaseModel):
-    year: int = Field(default=2023, ge=2018, le=2030, description="Formula 1 Championship Year")
+    year: int = Field(default=2025, ge=2025, le=2026, description="Formula 1 Championship Year")
     event: str = Field(default="Monaco", min_length=1, max_length=80, description="Grand Prix Event Name")
     session_type: str = Field(default="Q", min_length=1, max_length=16, description="Session Type (FP1, Q, R)")
     driver: str = Field(default="1", min_length=1, max_length=16, description="Driver Number or Code")
@@ -181,6 +181,15 @@ def get_vlm_status():
     return engines.diagnostics_service.get_vlm_status()
 
 
+def _require_supported_season(year: int) -> None:
+    seasons = get_seasons()
+    if year not in seasons:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Season {year} is not available. Supported seasons: {seasons}.",
+        )
+
+
 @app.get("/api/f1/seasons")
 def get_f1_seasons():
     return {"status": "success", "seasons": get_seasons()}
@@ -188,11 +197,13 @@ def get_f1_seasons():
 
 @app.get("/api/f1/calendar")
 def get_f1_calendar(year: int = 2025):
+    _require_supported_season(year)
     return {"status": "success", "year": year, "events": get_season_calendar(year)}
 
 
 @app.get("/api/f1/drivers")
 def get_f1_drivers(year: int = 2025, event: str = "monaco", session_type: str = "Q"):
+    _require_supported_season(year)
     return {"status": "success", "year": year, "event": event, "drivers": get_season_drivers(year)}
 
 
@@ -205,18 +216,19 @@ def get_telemetry_stream(
     lap: Optional[int] = None,
 ):
     """Serves normalized multi-channel telemetry for F1 sessions and laps."""
-    if year >= 2025:
-        try:
-            return generate_f1_session_telemetry(
-                year=year,
-                event_id=event,
-                session_type=session_type,
-                driver_number=driver,
-                lap_number=lap,
-            )
-        except Exception as exc:
-            logger.error("Failed to generate %s telemetry: %s", year, exc, exc_info=True)
-            raise HTTPException(status_code=500, detail="Telemetry generation failed.") from exc
+    _require_supported_season(year)
+
+    # Real fastf1 data is only used when that session is already cached locally:
+    # the livetiming endpoints answer 401/404, so a network attempt would stall
+    # the request and end up in the synthetic generator anyway.
+    if not has_cached_session(year, event, session_type):
+        return generate_f1_session_telemetry(
+            year=year,
+            event_id=event,
+            session_type=session_type,
+            driver_number=driver,
+            lap_number=lap,
+        )
 
     try:
         processor = FastF1Processor()
@@ -466,7 +478,7 @@ def _build_ev_analysis(request: AnomalyAnalysisRequest):
 def _build_f1_analysis(request: AnomalyAnalysisRequest):
     session_id = f"{request.year}_{request.event}_{request.session_type}"
 
-    if request.year >= 2025:
+    if not has_cached_session(request.year, request.event, request.session_type):
         telem_data = generate_f1_session_telemetry(
             year=request.year,
             event_id=request.event,
@@ -684,7 +696,7 @@ def analyze_anomaly(request: AnomalyAnalysisRequest):
 def run_demo():
     """Runs the full pipeline on a deterministic Monaco qualifying slice."""
     demo_request = AnomalyAnalysisRequest(
-        year=2023,
+        year=2025,
         event="Monaco",
         session_type="Q",
         driver="1",

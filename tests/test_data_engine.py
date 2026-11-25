@@ -1,9 +1,24 @@
 import pytest
-from backend.data_engine.ingestion import FastF1Processor, check_memory_limit
+from backend.data_engine import ingestion
+from backend.data_engine.ingestion import FastF1Processor, check_memory_limit, has_cached_session
 from backend.data_engine.cropping import ROICropper
 import psutil
 import polars as pl
 from pathlib import Path
+
+def test_has_cached_session_matches_fastf1_layout(tmp_path, monkeypatch):
+    cache = tmp_path / "raw_cache"
+    session_dir = cache / "2025" / "2025-05-24_Monaco_Grand_Prix" / "2025-05-24_Qualifying"
+    session_dir.mkdir(parents=True)
+    monkeypatch.setattr(ingestion, "CACHE_DIR", cache)
+
+    assert not has_cached_session(2025, "monaco", "Q")  # session dir is empty
+    (session_dir / "car_data.ff1pkl").write_bytes(b"x")
+    assert has_cached_session(2025, "monaco", "Q")
+    assert has_cached_session(2025, "Monaco Grand Prix", "Q")
+    assert not has_cached_session(2025, "spa", "Q")
+    assert not has_cached_session(2025, "monaco", "R")
+    assert not has_cached_session(2026, "monaco", "Q")
 
 def test_memory_limit_decorator(caplog):
     """
@@ -32,7 +47,7 @@ def test_fetch_and_stream_session():
     """
     processor = FastF1Processor()
     # Fetching a shorter session like Qualifying
-    result = processor.fetch_and_stream_session(2023, 'Monaco', 'Q')
+    result = processor.fetch_and_stream_session(2025, 'Monaco', 'Q')
     
     assert 'session' in result
     assert 'laps_pl' in result

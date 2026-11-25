@@ -1,7 +1,10 @@
 """
 F1 Multi-Season Calendar & Circuit Intelligence Engine
 Provides official FIA calendars, driver grids, circuit geometries, and high-frequency
-telemetry models for 2025, 2026, 2024, and 2023 Formula 1 World Championship seasons.
+telemetry models for the 2025 and 2026 Formula 1 World Championship seasons.
+
+Only the seasons the dashboard exposes are served; anything else raises ValueError
+so unsupported years cannot silently fall through to another season's data.
 """
 
 import math
@@ -31,29 +34,6 @@ DRIVERS_2025_2026 = [
     {"number": "5",  "code": "BOR", "name": "Gabriel Bortoleto",     "team": "Sauber / Audi",   "color": "#52E252"},
     {"number": "22", "code": "TSU", "name": "Yuki Tsunoda",          "team": "RB F1 Team",      "color": "#6692FF"},
     {"number": "6",  "code": "HAD", "name": "Isack Hadjar",          "team": "RB F1 Team",      "color": "#6692FF"},
-]
-
-DRIVERS_2023_2024 = [
-    {"number": "1",  "code": "VER", "name": "Max Verstappen",  "team": "Red Bull Racing", "color": "#3671C6"},
-    {"number": "11", "code": "PER", "name": "Sergio Perez",    "team": "Red Bull Racing", "color": "#3671C6"},
-    {"number": "4",  "code": "NOR", "name": "Lando Norris",    "team": "McLaren",         "color": "#FF8000"},
-    {"number": "81", "code": "PIA", "name": "Oscar Piastri",   "team": "McLaren",         "color": "#FF8000"},
-    {"number": "16", "code": "LEC", "name": "Charles Leclerc", "team": "Ferrari",         "color": "#F91536"},
-    {"number": "55", "code": "SAI", "name": "Carlos Sainz",    "team": "Ferrari",         "color": "#F91536"},
-    {"number": "44", "code": "HAM", "name": "Lewis Hamilton",  "team": "Mercedes-AMG",    "color": "#6CD3BF"},
-    {"number": "63", "code": "RUS", "name": "George Russell",  "team": "Mercedes-AMG",    "color": "#6CD3BF"},
-    {"number": "14", "code": "ALO", "name": "Fernando Alonso", "team": "Aston Martin",    "color": "#358C75"},
-    {"number": "18", "code": "STR", "name": "Lance Stroll",    "team": "Aston Martin",    "color": "#358C75"},
-    {"number": "10", "code": "GAS", "name": "Pierre Gasly",    "team": "Alpine",          "color": "#2293D1"},
-    {"number": "31", "code": "OCO", "name": "Esteban Ocon",    "team": "Alpine",          "color": "#2293D1"},
-    {"number": "23", "code": "ALB", "name": "Alexander Albon", "team": "Williams",        "color": "#37BEDD"},
-    {"number": "2",  "code": "SAR", "name": "Logan Sargeant",  "team": "Williams",        "color": "#37BEDD"},
-    {"number": "22", "code": "TSU", "name": "Yuki Tsunoda",    "team": "RB F1 Team",      "color": "#5E8FAA"},
-    {"number": "3",  "code": "RIC", "name": "Daniel Ricciardo","team": "RB F1 Team",      "color": "#5E8FAA"},
-    {"number": "77", "code": "BOT", "name": "Valtteri Bottas", "team": "Kick Sauber",     "color": "#52E252"},
-    {"number": "24", "code": "ZHO", "name": "Zhou Guanyu",     "team": "Kick Sauber",     "color": "#52E252"},
-    {"number": "27", "code": "HUL", "name": "Nico Hülkenberg", "team": "Haas F1 Team",    "color": "#B6BABD"},
-    {"number": "20", "code": "MAG", "name": "Kevin Magnussen", "team": "Haas F1 Team",    "color": "#B6BABD"},
 ]
 
 # ─── 2025 FIA Official Formula 1 World Championship Calendar ───────────────────
@@ -113,36 +93,6 @@ CALENDAR_2026 = [
     {"round": 23, "id": "saudi_arabia", "name": "Saudi Arabian Grand Prix",  "circuit": "Jeddah Corniche Circuit",       "country": "Saudi Arabia",   "location": "Jeddah",            "lap_len": 6.174, "ref_time": 86.9, "corners": 27},
 ]
 
-# ─── 2024 FIA Official Formula 1 World Championship Calendar ───────────────────
-# Accurate 2024 race order — differs from 2025 (no Imola/China swap, Bahrain Round 1)
-
-CALENDAR_2024 = [
-    {"round": 1,  "id": "bahrain",      "name": "Bahrain Grand Prix",        "circuit": "Bahrain International Circuit",  "country": "Bahrain",        "location": "Sakhir",            "lap_len": 5.412, "ref_time": 90.0, "corners": 15},
-    {"round": 2,  "id": "saudi_arabia", "name": "Saudi Arabian Grand Prix",  "circuit": "Jeddah Corniche Circuit",       "country": "Saudi Arabia",   "location": "Jeddah",            "lap_len": 6.174, "ref_time": 88.7, "corners": 27},
-    {"round": 3,  "id": "australia",    "name": "Australian Grand Prix",     "circuit": "Albert Park Circuit",           "country": "Australia",      "location": "Melbourne",         "lap_len": 5.278, "ref_time": 76.8, "corners": 14},
-    {"round": 4,  "id": "japan",        "name": "Japanese Grand Prix",       "circuit": "Suzuka International Racing",   "country": "Japan",          "location": "Suzuka",            "lap_len": 5.807, "ref_time": 88.6, "corners": 18},
-    {"round": 5,  "id": "china",        "name": "Chinese Grand Prix",        "circuit": "Shanghai International Circuit", "country": "China",          "location": "Shanghai",          "lap_len": 5.451, "ref_time": 94.2, "corners": 16},
-    {"round": 6,  "id": "miami",        "name": "Miami Grand Prix",          "circuit": "Miami International Autodrome",  "country": "United States",  "location": "Miami Gardens",     "lap_len": 5.412, "ref_time": 87.6, "corners": 19},
-    {"round": 7,  "id": "imola",        "name": "Emilia Romagna Grand Prix", "circuit": "Autodromo Enzo e Dino Ferrari",  "country": "Italy",          "location": "Imola",             "lap_len": 4.909, "ref_time": 75.2, "corners": 19},
-    {"round": 8,  "id": "monaco",       "name": "Monaco Grand Prix",         "circuit": "Circuit de Monaco",             "country": "Monaco",         "location": "Monte Carlo",       "lap_len": 3.337, "ref_time": 71.9, "corners": 19},
-    {"round": 9,  "id": "canada",       "name": "Canadian Grand Prix",       "circuit": "Circuit Gilles Villeneuve",     "country": "Canada",         "location": "Montréal",          "lap_len": 4.361, "ref_time": 72.3, "corners": 14},
-    {"round": 10, "id": "spain",        "name": "Spanish Grand Prix",        "circuit": "Circuit de Barcelona-Catalunya", "country": "Spain",          "location": "Barcelona",         "lap_len": 4.657, "ref_time": 72.8, "corners": 14},
-    {"round": 11, "id": "austria",      "name": "Austrian Grand Prix",       "circuit": "Red Bull Ring",                 "country": "Austria",        "location": "Spielberg",         "lap_len": 4.318, "ref_time": 64.7, "corners": 10},
-    {"round": 12, "id": "silverstone",  "name": "British Grand Prix",        "circuit": "Silverstone Circuit",           "country": "United Kingdom", "location": "Silverstone",       "lap_len": 5.891, "ref_time": 86.1, "corners": 18},
-    {"round": 13, "id": "hungary",      "name": "Hungarian Grand Prix",      "circuit": "Hungaroring",                   "country": "Hungary",        "location": "Budapest",          "lap_len": 4.381, "ref_time": 75.6, "corners": 14},
-    {"round": 14, "id": "spa",          "name": "Belgian Grand Prix",        "circuit": "Circuit de Spa-Francorchamps",  "country": "Belgium",        "location": "Spa-Francorchamps", "lap_len": 7.004, "ref_time": 103.6,"corners": 19},
-    {"round": 15, "id": "netherlands",  "name": "Dutch Grand Prix",          "circuit": "Circuit Zandvoort",             "country": "Netherlands",    "location": "Zandvoort",         "lap_len": 4.259, "ref_time": 70.1, "corners": 14},
-    {"round": 16, "id": "monza",        "name": "Italian Grand Prix",        "circuit": "Autodromo Nazionale Monza",     "country": "Italy",          "location": "Monza",             "lap_len": 5.793, "ref_time": 79.7, "corners": 11},
-    {"round": 17, "id": "baku",         "name": "Azerbaijan Grand Prix",     "circuit": "Baku City Circuit",             "country": "Azerbaijan",     "location": "Baku",              "lap_len": 6.003, "ref_time": 100.7,"corners": 20},
-    {"round": 18, "id": "singapore",    "name": "Singapore Grand Prix",      "circuit": "Marina Bay Street Circuit",     "country": "Singapore",      "location": "Marina Bay",        "lap_len": 4.940, "ref_time": 90.0, "corners": 19},
-    {"round": 19, "id": "austin",       "name": "United States Grand Prix",  "circuit": "Circuit of The Americas",       "country": "United States",  "location": "Austin",            "lap_len": 5.513, "ref_time": 93.2, "corners": 20},
-    {"round": 20, "id": "mexico",       "name": "Mexico City Grand Prix",    "circuit": "Autódromo Hermanos Rodríguez",  "country": "Mexico",         "location": "Mexico City",       "lap_len": 4.304, "ref_time": 77.5, "corners": 17},
-    {"round": 21, "id": "brazil",       "name": "São Paulo Grand Prix",      "circuit": "Autódromo de Interlagos",       "country": "Brazil",         "location": "São Paulo",         "lap_len": 4.309, "ref_time": 70.1, "corners": 15},
-    {"round": 22, "id": "las_vegas",    "name": "Las Vegas Grand Prix",      "circuit": "Las Vegas Strip Circuit",       "country": "United States",  "location": "Las Vegas",         "lap_len": 6.201, "ref_time": 93.1, "corners": 17},
-    {"round": 23, "id": "qatar",        "name": "Qatar Grand Prix",          "circuit": "Lusail International Circuit",  "country": "Qatar",          "location": "Lusail",            "lap_len": 5.419, "ref_time": 80.9, "corners": 16},
-    {"round": 24, "id": "abu_dhabi",    "name": "Abu Dhabi Grand Prix",      "circuit": "Yas Marina Circuit",            "country": "UAE",            "location": "Yas Island",        "lap_len": 5.281, "ref_time": 82.6, "corners": 16},
-]
-
 # ─── Geometric Circuit Coordinates for Dynamic Track Maps ─────────────────────
 
 from backend.data_engine.circuit_geometries import (
@@ -154,27 +104,22 @@ from backend.data_engine.circuit_geometries import (
 # ─── High-Level Calendar Accessors ───────────────────────────────────────────
 
 def get_seasons() -> List[int]:
-    """Returns available F1 Championship seasons."""
-    return [2026, 2025, 2024, 2023]
+    """Returns the F1 Championship seasons the dashboard serves."""
+    return [2026, 2025]
+
+def _require_supported(year: int) -> None:
+    if year not in (2025, 2026):
+        raise ValueError(f"Season {year} is not available; supported seasons: 2025, 2026.")
 
 def get_season_calendar(year: int) -> List[Dict[str, Any]]:
     """Returns official FIA calendar for the requested season."""
-    if year == 2026:
-        return CALENDAR_2026
-    elif year == 2025:
-        return CALENDAR_2025
-    elif year == 2024:
-        return CALENDAR_2024
-    else:
-        # 2023: 23 races — same venues as 2024 minus China (which returned in 2024)
-        return [ev for ev in CALENDAR_2024 if ev["id"] != "china"]
+    _require_supported(year)
+    return CALENDAR_2026 if year == 2026 else CALENDAR_2025
 
 def get_season_drivers(year: int) -> List[Dict[str, Any]]:
     """Returns official driver lineup with car numbers and team liveries."""
-    if year >= 2025:
-        return DRIVERS_2025_2026
-    else:
-        return DRIVERS_2023_2024
+    _require_supported(year)
+    return DRIVERS_2025_2026
 
 def get_event_meta(year: int, event_identifier: str) -> Dict[str, Any]:
     """Finds Grand Prix metadata by ID, alias, or name substring."""

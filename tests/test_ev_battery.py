@@ -51,7 +51,7 @@ def test_ev_telemetry_stream_endpoint():
 def test_ev_analyze_anomaly_endpoint():
     """Verify master orchestration POST /api/analyze_anomaly with EV_BATTERY domain."""
     payload = {
-        "year": 2023,
+        "year": 2025,
         "event": "Fleet_Cycle",
         "session_type": "Discharge",
         "driver": "EV-B0005",

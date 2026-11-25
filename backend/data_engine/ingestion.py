@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 from functools import wraps
 
 import fastf1
@@ -7,6 +8,7 @@ import polars as pl
 import psutil
 
 from backend.core import config
+from backend.data_engine.f1_calendar import get_event_meta
 
 logger = logging.getLogger(__name__)
 
@@ -66,3 +68,44 @@ class FastF1Processor:
             "laps_pl": laps_pl,
             "weather_pl": weather_pl,
         }
+
+
+_SESSION_DIR_NAMES = {
+    "FP1": ("Practice 1",),
+    "FP2": ("Practice 2",),
+    "FP3": ("Practice 3",),
+    "Q": ("Qualifying",),
+    "SQ": ("Sprint Qualifying", "Sprint Shootout"),
+    "SS": ("Sprint Shootout", "Sprint Qualifying"),
+    "S": ("Sprint",),
+    "R": ("Race",),
+}
+
+
+def _normalize(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", text.lower())
+
+
+def has_cached_session(year: int, event: str, session_type: str) -> bool:
+    """True when fastf1 already holds this session on disk, so it can be loaded
+    without network access. The public livetiming endpoints are unreliable, so
+    callers load from cache only and use synthetic data otherwise."""
+    session_names = _SESSION_DIR_NAMES.get(session_type.strip().upper())
+    year_dir = CACHE_DIR / str(year)
+    if not session_names or not year_dir.is_dir():
+        return False
+    try:
+        wanted_event = _normalize(get_event_meta(year, event)["name"])
+    except ValueError:
+        return False
+    for event_dir in year_dir.iterdir():
+        if not event_dir.is_dir() or wanted_event not in _normalize(event_dir.name):
+            continue
+        for session_dir in event_dir.iterdir():
+            if (
+                session_dir.is_dir()
+                and any(_normalize(name) in _normalize(session_dir.name) for name in session_names)
+                and any(session_dir.iterdir())
+            ):
+                return True
+    return False

@@ -60,19 +60,24 @@ origin):
 First start downloads the 605 MB OpenCLIP checkpoint (seconds on the Space's
 link) and warms the FAISS store. Verified 2026-11-25 on
 `kuro1125-overcut-api.hf.space`: `/api/health` → `{"status":"healthy",
-"engine_ready":true}`; `POST /api/demo` → 200 in **6.3 s** with
-`provider: DETERMINISTIC_HEURISTIC` and a served PNG crop.
+"engine_ready":true}`; `POST /api/demo` (2025 Monaco qualifying) → 200 in
+**6.3 s** with `provider: DETERMINISTIC_HEURISTIC` and a served PNG crop.
 
 Free ZeroGPU Spaces sleep when idle (48 h timer), re-clone the repo to `/tmp` on
 wake, and have a daily ZeroGPU quota — the API itself never uses the GPU, so the
 quota only covers the probe button.
 
-**F1 data on datacenter hosts.** Checked 2026-11-25 in the Space's logs:
-fastf1 falls back to `livetiming-mirror.fastf1.dev`, which answers "No data for
-this session!" for requests from the Space, so `/api/telemetry/stream` serves
-the synthetic generator instead of real session telemetry. The response now
-carries `"simulated": true`, the timeline renders a `SIMULATED FEED` badge, and
-the generator applies a deterministic per-driver offset/scale (seeded by car
+**Seasons and F1 data source.** The API serves the 2025 and 2026 seasons only,
+matching the dashboard's season picker; `/api/f1/*` and `/api/telemetry/stream`
+answer **400** for any other year. Telemetry uses real fastf1 laps when that
+session is already in `data/raw_cache/<year>/` (verified 2026-11-25: the cached
+2023 Monaco qualifying loads offline in 5.4 s, 420 laps), and the synthetic
+generator otherwise. As of 2026-11-25 the network path cannot supply sessions:
+`livetiming.formula1.com` answers **401** and the `livetiming-mirror.fastf1.dev`
+fallback answers **404**, from this machine and from the Space. So on both
+deployments the stream is synthetic and labelled: the response carries
+`"simulated": true`, the timeline renders a `SIMULATED FEED` badge, and the
+generator applies a deterministic per-driver offset/scale (seeded by car
 number) so each driver's trace is distinct. EV telemetry is generated on the
 server in both environments.
 
@@ -100,7 +105,7 @@ image 3.76 GB). The Dockerfile clones `main` from GitHub at build time, so a
 | Feature | Behaviour |
 | :--- | :--- |
 | Landing pages, workspaces, chart interactions | Fully static on Vercel |
-| Telemetry streams | Served by the API's synthetic generators |
+| Telemetry streams | 2025/2026 only; real fastf1 laps when the session is cached in `data/raw_cache/`, otherwise the API's synthetic generators (`simulated: true`) |
 | Execute Diagnosis | Heuristic engine, provider `DETERMINISTIC_HEURISTIC` |
 | 7B QLoRA local tier | Not available (no GPU); UI label shows the active provider |
 | FAISS precedent cards | Empty until `python scripts/generate_baseline.py` seeds the index (the dossier still renders without them) |

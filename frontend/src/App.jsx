@@ -39,8 +39,6 @@ export const DEFAULT_DRIVERS_2025_2026 = [
   { id: '6',  number: '6',  code: 'HAD', name: 'Isack Hadjar',          team: 'RB F1 Team',       color: '#6692FF' },
 ]
 
-export const DEFAULT_DRIVERS_2023_2024 = DEFAULT_DRIVERS_2025_2026 // alias kept for backward compat, same grid
-
 export const DEFAULT_CALENDAR_2025 = [
   { round: 1,  id: 'australia',      name: 'Australian Grand Prix',      circuit: 'Albert Park Circuit',           country: 'Australia',    location: 'Melbourne' },
   { round: 2,  id: 'china',          name: 'Chinese Grand Prix',         circuit: 'Shanghai International',        country: 'China',        location: 'Shanghai' },
@@ -178,7 +176,7 @@ export default function App() {
         }
       } catch {
         if (isMounted && !controller.signal.aborted) {
-          setAvailableDrivers(selectedYear >= 2025 ? DEFAULT_DRIVERS_2025_2026 : DEFAULT_DRIVERS_2023_2024)
+          setAvailableDrivers(DEFAULT_DRIVERS_2025_2026)
           setAvailableEvents(DEFAULT_CALENDAR_2025)
         }
       }
