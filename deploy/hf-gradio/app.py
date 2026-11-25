@@ -26,11 +26,25 @@ os.environ.setdefault(
 SOURCE_DIR = os.getenv("OVERCUT_SRC", "/tmp/overcut-src")
 REPO_URL = "https://github.com/KURO-1125/Overcut.ai.git"
 
-if not os.path.isdir(os.path.join(SOURCE_DIR, "backend")):
-    subprocess.run(
-        ["git", "clone", "--depth", "1", REPO_URL, SOURCE_DIR],
-        check=True,
-    )
+try:
+    if os.path.isdir(os.path.join(SOURCE_DIR, ".git")):
+        # /tmp survives a Space restart, so a restart alone would keep running
+        # the previously cloned revision. Fast-forward it to main instead.
+        subprocess.run(
+            ["git", "-C", SOURCE_DIR, "fetch", "--depth", "1", "origin", "main"],
+            check=True,
+        )
+        subprocess.run(
+            ["git", "-C", SOURCE_DIR, "reset", "--hard", "FETCH_HEAD"],
+            check=True,
+        )
+    else:
+        subprocess.run(
+            ["git", "clone", "--depth", "1", REPO_URL, SOURCE_DIR],
+            check=True,
+        )
+except subprocess.CalledProcessError as exc:
+    print(f"[boot] source sync failed, using existing checkout: {exc}", flush=True)
 sys.path.insert(0, SOURCE_DIR)
 
 import gradio as gr  # noqa: E402
