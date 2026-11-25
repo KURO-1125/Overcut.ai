@@ -67,6 +67,15 @@ Free ZeroGPU Spaces sleep when idle (48 h timer), re-clone the repo to `/tmp` on
 wake, and have a daily ZeroGPU quota — the API itself never uses the GPU, so the
 quota only covers the probe button.
 
+**F1 data on datacenter hosts.** Checked 2026-11-25 in the Space's logs:
+fastf1 falls back to `livetiming-mirror.fastf1.dev`, which answers "No data for
+this session!" for requests from the Space, so `/api/telemetry/stream` serves
+the synthetic generator instead of real session telemetry. The response now
+carries `"simulated": true`, the timeline renders a `SIMULATED FEED` badge, and
+the generator applies a deterministic per-driver offset/scale (seeded by car
+number) so each driver's trace is distinct. EV telemetry is generated on the
+server in both environments.
+
 ## 2b. API — HF Docker Space (paid alternative)
 
 Requires HF PRO. Use [`deploy/hf-space/`](deploy/hf-space): SDK **Docker**, blank,

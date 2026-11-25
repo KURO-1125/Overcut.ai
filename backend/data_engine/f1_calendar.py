@@ -413,6 +413,13 @@ def generate_f1_session_telemetry(
         delta_offset = 0.2
     else:
         delta_offset = 0.8
+
+    # Deterministic per-driver variation: the team tier alone made teammates
+    # render byte-identical traces (every Red Bull/Ferrari driver shared -0.4).
+    rng = np.random.default_rng(int(driver_obj["number"]) * 7919 + int(year))
+    delta_offset += float(np.round(rng.uniform(-0.12, 0.12), 3))
+    speed_scale = 1.0 + float(rng.uniform(-0.012, 0.012))
+    brake_scale = float(rng.uniform(0.94, 1.06))
         
     # Calculate total laps and full stint progression
     total_laps = 78 if ev_meta["id"] == "monaco" else int(np.ceil(305.0 / ev_meta.get("lap_len", 5.2)))
@@ -504,9 +511,14 @@ def generate_f1_session_telemetry(
 
     s1_time = active_lap.get("s1", round(total_time * 0.31, 3))
     s2_time = active_lap.get("s2", round(total_time * 0.38, 3))
-    
+
+    # Per-driver shaping of the synthetic profile (deterministic, seed above).
+    speeds = np.round(np.clip(speeds * speed_scale, 0.0, 342.0), 1)
+    brakes = np.clip(np.rint(brakes * brake_scale).astype(int), 0, 100)
+
     return {
         "status": "success",
+        "simulated": True,
         "session_id": f"{year}_{ev_meta['id']}_{session_type}",
         "driver": str(driver_obj["number"]),
         "driver_name": driver_obj["name"],
