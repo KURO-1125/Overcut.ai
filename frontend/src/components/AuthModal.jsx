@@ -113,7 +113,7 @@ export default function AuthModal() {
             style={{ color: 'var(--text-muted)', fontFamily: "'Inter', sans-serif" }}
           >
             {authMode === 'login'
-              ? 'Sign in to access 100Hz telemetry intelligence and 7B on-device AI.'
+              ? 'Sign in to access high-frequency telemetry intelligence and 7B on-device AI.'
               : 'Register your engineer profile for collaborative anomaly diagnostics.'}
           </p>
         </div>

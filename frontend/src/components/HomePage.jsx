@@ -535,7 +535,7 @@ export default function HomePage({ onNavigate }) {
   }
 
   const HERO_STATS = [
-    { value: '100Hz', label: 'Sampling Rate' },
+    { value: '~4Hz', label: 'Real F1 Feed' },
     { value: 'GPU',   label: 'Local Inference' },
     { value: '7B',    label: 'QLoRA Model' },
     { value: '0.65',  label: 'Confidence Gate' },
@@ -544,9 +544,9 @@ export default function HomePage({ onNavigate }) {
   const FEATURES = [
     {
       icon: Activity,
-      title: '100Hz Telemetry Sampling',
-      body: 'Full-resolution lap data at 100 samples/sec across all 24 FIA calendar circuits.',
-      stat: 'FastF1 3.4 · 100Hz',
+      title: 'Real Telemetry Pipeline',
+      body: 'Real 2025/2026 car telemetry at ~4 Hz (OpenF1 or cached FastF1), rendered on a high-resolution canvas and labelled when synthetic.',
+      stat: 'OpenF1 · FastF1',
     },
     {
       icon: Database,
@@ -569,7 +569,7 @@ export default function HomePage({ onNavigate }) {
     {
       icon: BarChart2,
       title: 'Dual-Driver Delta Analysis',
-      body: 'Side-by-side 100Hz comparison with continuous micro-sector delta-time visualization.',
+      body: 'Side-by-side telemetry comparison with continuous micro-sector delta-time visualization.',
       stat: 'Ghost Car Overlay',
     },
     {
@@ -640,7 +640,7 @@ export default function HomePage({ onNavigate }) {
               style={{ color: 'var(--text-secondary)', fontFamily: "'Inter', sans-serif", willChange: 'transform, opacity' }}
             >
               The first multimodal AI platform for motorsport engineers and EV battery specialists.
-              Drag a window on a 100Hz waveform and get a structured engineering diagnosis grounded in retrieved precedent.
+              Drag a window on the telemetry waveform and get a structured engineering diagnosis grounded in retrieved precedent.
             </p>
 
             {/* CTAs */}
@@ -767,10 +767,10 @@ export default function HomePage({ onNavigate }) {
             <ModeCard
               signal="#E8FF00"
               label="Formula 1 Intelligence"
-              tagline="F1 Motorsport · 100Hz"
-              description="100Hz lap telemetry. Micro-sector anomaly detection. Dual-driver delta-T ghost car overlay across all 24 FIA circuits."
+              tagline="F1 Motorsport · OpenF1"
+              description="Real lap telemetry. Micro-sector anomaly detection. Dual-driver delta-T ghost car overlay across the FIA calendars."
               pills={[
-                { icon: Activity,  text: '100Hz Sampling' },
+                { icon: Activity,  text: 'Real F1 Telemetry' },
                 { icon: GitBranch, text: 'Delta-T Analysis' },
                 { icon: Map,       text: '24 FIA Circuits' },
                 { icon: Cpu,       text: 'Local 7B VLM (optional)' },
@@ -873,7 +873,7 @@ export default function HomePage({ onNavigate }) {
             Ready to Analyze?
           </h2>
           <p className="text-[15px] max-w-md" style={{ color: 'var(--text-secondary)' }}>
-            Launch the workspace and start dragging anomaly windows on live 100Hz telemetry.
+            Launch the workspace and start dragging anomaly windows on live telemetry.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4">

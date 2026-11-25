@@ -2,7 +2,7 @@
 
 **Generative multimodal observability gateway for high-frequency telemetry.**
 
-Drag a window on a 100 Hz trace and get a structured, evidence-cited diagnosis:
+Drag a window on a real telemetry trace and get a structured, evidence-cited diagnosis:
 fault code, severity, per-channel citations, retrieved historical precedents and
 a corrective action — from a 7B QLoRA model running locally in 5.47 GB of VRAM,
 or from a labelled deterministic fallback when no GPU is available.
@@ -15,9 +15,10 @@ https://github.com/user-attachments/assets/c37fa02d-955a-4fc4-9c57-825b038478da
 [![Polars](https://img.shields.io/badge/Data_Engine-Polars-CD792C?logo=polars&logoColor=white)](https://pola.rs)
 [![FAISS](https://img.shields.io/badge/Vector_DB-FAISS_IndexFlatIP-00599C)](https://github.com/facebookresearch/faiss)
 [![OpenCLIP](https://img.shields.io/badge/Embeddings-OpenCLIP_ViT--B/32-blueviolet)](https://github.com/mlfoundations/open_clip)
-[![uPlot](https://img.shields.io/badge/Timeline-uPlot_Canvas_100Hz-black)](https://github.com/leeoniya/uPlot)
+[![uPlot](https://img.shields.io/badge/Timeline-uPlot_Canvas-black)](https://github.com/leeoniya/uPlot)
+[![Telemetry](https://img.shields.io/badge/Telemetry-OpenF1_%2B_FastF1-009688)](https://openf1.org)
 [![React](https://img.shields.io/badge/Frontend-React_19_Vite-61DAFB?logo=react&logoColor=black)](https://react.dev)
-[![Tests](https://img.shields.io/badge/Test_Suite-53_Passed_1_Skipped-emerald)](tests/)
+[![Tests](https://img.shields.io/badge/Test_Suite-64_Passed_2_Skipped-emerald)](tests/)
 
 ---
 
@@ -31,8 +32,9 @@ window and compare its shape against engineering precedent.
 
 Overcut.ai is that workflow end to end:
 
-1. **Timeline** — a 100 Hz uPlot canvas over out-of-core Polars frames, with
-   hover HUD and bounding-box window selection.
+1. **Timeline** — a uPlot canvas over out-of-core Polars frames, with hover HUD
+   and bounding-box window selection. Real feeds arrive at ~4 Hz (F1's
+   telemetry resolution); the synthetic fallback renders at 100 Hz.
 2. **Crop** — the selected window is rendered into a high-contrast, concatenated
    channel image (Matplotlib) that carries waveform *shape*, not just numbers.
 3. **Retrieve** — the crop and its metadata are embedded with OpenCLIP
@@ -61,6 +63,17 @@ Overcut.ai is that workflow end to end:
 <sub>The EV fleet workspace: pack topology schematic, live degradation alerts and
 the diagnostic dossier launcher.</sub>
 
+### Where the F1 telemetry comes from
+
+2025/2026 sessions are served by [OpenF1](https://openf1.org) — free, no API
+key, ~3.7 Hz car telemetry (speed, throttle, brake, gear, RPM) plus GPS and lap
+timing. It does not read FastF1's archive, which F1 locked behind authentication
+on 2026-10-15; OpenF1 ingests the still-open live-timing feed instead. OpenF1
+data is **CC BY-NC-SA 4.0** — attribution is required and commercial use is not
+permitted. Sessions already present in `data/raw_cache/` are served from cached
+FastF1 laps first; when neither source has data the API returns a deterministic
+simulation marked `"simulated": true`.
+
 ## Architecture
 
 ```mermaid
@@ -71,7 +84,7 @@ graph TD
     end
 
     subgraph Observability Frontend
-        POL -->|100Hz stream| UPLOT[uPlot canvas timeline]
+        POL -->|telemetry stream| UPLOT[uPlot canvas timeline]
         UPLOT -->|Live hover HUD| HUD[Pit-wall metrics]
         UPLOT -->|GPS sync| MAP[Monaco track map / BMS schematic]
         UPLOT -->|Bounding-box drag| ROI[ROI selection t1, t2]
@@ -207,6 +220,7 @@ variables always win. Without a GPU and adapter weights the API reports
 | `OVERCUT_DATA_DIR` | Redirect mutable data (FAISS index, SQLite, parquet, ROI crops) |
 | `OVERCUT_MODELS_DIR` | Redirect model adapters |
 | `OVERCUT_MAX_CONCURRENT_ANALYSES` | Concurrent heavy analyses before HTTP 429 (default 2) |
+| `OVERCUT_OPENF1` | `auto` (default) queries OpenF1 for 2025/2026 telemetry; `off` forces the labelled synthetic path. Timeout via `OVERCUT_OPENF1_TIMEOUT` (seconds) |
 | `GEMINI_API_KEY` / `OPENAI_API_KEY` | Optional cloud providers |
 
 ### Backend
@@ -251,10 +265,11 @@ $env:PYTHONPATH="."
 venv\Scripts\python.exe -m pytest tests/ -q
 ```
 
-Current result (2026-11-20): `53 passed, 1 skipped, 1 warning in 63.79s`. The
-single skip is the FastF1 network test, gated behind an explicit opt-in because
-it downloads real race data. FAISS/SQLite state is isolated per test via
-`tests/conftest.py`.
+Current result (2026-11-25): `64 passed, 2 skipped in 34.53s`. Both skips are
+opt-in network tests: the FastF1 session download and the live OpenF1 adapter
+check (`OVERCUT_OPENF1_LIVE=1`). The suite runs with `OVERCUT_OPENF1=off` so CI
+never depends on external telemetry APIs. FAISS/SQLite state is isolated per
+test via `tests/conftest.py`.
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs the same suite
 (including the golden-set manifest, label, disjointness and scorer checks) plus
@@ -297,7 +312,7 @@ Overcut.ai/
 │   ├── ai/                     # Pydantic schema, diagnostic service, prompting
 │   ├── api/                    # FastAPI gateway, auth, orchestration
 │   ├── core/                   # Runtime configuration
-│   ├── data_engine/            # FastF1 & NASA ingestion, ROI cropper, circuit geometry
+│   ├── data_engine/            # OpenF1/FastF1 & NASA ingestion, ROI cropper, circuit geometry
 │   ├── vector_store/           # OpenCLIP ViT-B/32, FAISS IndexFlatIP + SQLite
 │   └── requirements.lock       # Universal resolved lock (Python 3.10+)
 ├── data/
@@ -310,7 +325,7 @@ Overcut.ai/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── TimelineWorkspace.jsx  # 100 Hz uPlot dual-domain canvas
+│   │   │   ├── TimelineWorkspace.jsx  # uPlot dual-domain canvas
 │   │   │   ├── TrackMap.jsx           # Circuit de Monaco SVG + live GPS dot
 │   │   │   └── BatteryPackMap.jsx     # 96S NMC 811 pack schematic
 │   │   ├── App.jsx             # Shell, diagnostic dossier, domain toggle
@@ -327,7 +342,7 @@ Overcut.ai/
 │   ├── train_qlora_ev.py       # QLoRA SFT: product prompt, masked JSON loss, 4-bit NF4
 │   ├── run_golden_inference.py # Golden-set inference → predictions JSONL
 │   └── evaluate_qlora.py       # Score predictions against the golden set
-├── tests/                      # 54 unit, integration and evaluation tests
+├── tests/                      # 66 unit, integration and evaluation tests
 ├── DEPLOY.md
 ├── .env.example
 └── pytest.ini
@@ -340,6 +355,10 @@ Overcut.ai/
   data. See the caveat under [Benchmark](#benchmark).
 - There is no F1 golden set; motorsport quality is demonstrated by retrieval and
   the heuristic/adapter path, not a scored benchmark.
+- Real F1 telemetry depends on OpenF1, an unofficial service under
+  CC BY-NC-SA 4.0: availability is best-effort, attribution is required and the
+  data cannot be used commercially. Responses are cached so demos survive
+  outages; the synthetic fallback is always labelled.
 - Cloud tiers (`GEMINI_API_KEY`, `OPENAI_API_KEY`) are optional and off by
   default; hosted CPU deployments fall back to `DETERMINISTIC_HEURISTIC`.
 - The 7B local tier requires CUDA plus adapter weights under

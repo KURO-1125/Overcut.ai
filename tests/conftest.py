@@ -14,6 +14,9 @@ os.environ["OVERCUT_ENV"] = "test"
 os.environ.setdefault("OVERCUT_JWT_SECRET", "test-only-secret-not-used-in-production")
 os.environ.pop("OVERCUT_API_KEY", None)
 os.environ.pop("GEMINI_API_KEY", None)
+# Tests must not depend on external telemetry APIs; the OpenF1 adapter has its
+# own unit tests and an opt-in live test.
+os.environ["OVERCUT_OPENF1"] = "off"
 
 import pytest
 

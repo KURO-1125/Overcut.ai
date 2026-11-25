@@ -239,7 +239,7 @@ export default function App() {
       )
     } else {
       evidenceList = [
-        'Continuous 100Hz telemetry waveform inflection confirmed',
+        'Continuous telemetry waveform inflection confirmed',
         'Signal cross-verified against baseline telemetry boundaries',
       ]
     }
@@ -308,7 +308,7 @@ export default function App() {
         root_cause:              diag.root_cause || diag.title || 'Signal variance identified across primary telemetry channels.',
         physical_evidence:       evidenceList,
         strategic_recommendation: recommendation,
-        technical_notes:         diag.technical_notes || 'Continuous 100Hz physical waveform perception verified.',
+        technical_notes:         diag.technical_notes || 'Continuous physical waveform perception verified.',
         model_name:              engineName,
         provider:                diag.provider || (payload.simulated ? 'SIMULATED' : engineChoice === 'local_vlm' ? 'LOCAL_VLM' : 'DETERMINISTIC_HEURISTIC'),
         is_insufficient_data:    !!diag.is_insufficient_data,

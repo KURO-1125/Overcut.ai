@@ -198,7 +198,7 @@ export default function TrackMap({
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <span className="live-beacon" aria-hidden="true" />
           <span className="font-mono text-[10px] uppercase tracking-widest text-emerald-400 font-semibold">
-            GPS Live (100Hz)
+            GPS Live (~4Hz)
           </span>
         </div>
       </div>

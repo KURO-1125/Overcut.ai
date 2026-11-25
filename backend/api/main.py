@@ -29,6 +29,7 @@ from backend.data_engine.f1_calendar import (
     get_seasons,
 )
 from backend.data_engine.ingestion import FastF1Processor, has_cached_session
+from backend.data_engine.openf1_client import fetch_openf1_telemetry
 from backend.vector_store.db import VectorDB, artifact_hash
 from backend.vector_store.engine import VectorEngine
 
@@ -220,8 +221,18 @@ def get_telemetry_stream(
 
     # Real fastf1 data is only used when that session is already cached locally:
     # the livetiming endpoints answer 401/404, so a network attempt would stall
-    # the request and end up in the synthetic generator anyway.
+    # the request and end up in the synthetic generator anyway. OpenF1 serves
+    # the same sessions from its own ingestion and is tried before simulating.
     if not has_cached_session(year, event, session_type):
+        openf1 = fetch_openf1_telemetry(
+            year=year,
+            event=event,
+            session_type=session_type,
+            driver=driver,
+            lap_number=lap,
+        )
+        if openf1 is not None:
+            return openf1
         return generate_f1_session_telemetry(
             year=year,
             event_id=event,
@@ -475,63 +486,79 @@ def _build_ev_analysis(request: AnomalyAnalysisRequest):
     return image_path, telemetry_summary, meta_description
 
 
+def _analyze_f1_series(request: AnomalyAnalysisRequest, telem_data: dict):
+    session_id = f"{request.year}_{request.event}_{request.session_type}"
+    times, speeds, throttles, brakes, gears, rpms = telem_data["series"]
+    df_telem = pl.DataFrame({
+        "Time": times,
+        "Speed": speeds,
+        "Throttle": throttles,
+        "Brake": brakes,
+        "Gear": gears,
+        "RPM": rpms,
+    })
+
+    channels = request.channels if any(
+        channel.lower() in {"speed", "throttle", "brake"} for channel in request.channels
+    ) else ["Speed", "Throttle", "Brake"]
+
+    image_path = ROICropper.generate_dataframe_roi_crop(
+        df=df_telem,
+        start_time=request.start_offset_seconds,
+        end_time=request.end_offset_seconds,
+        channels=channels,
+        session_id=session_id,
+    )
+
+    slice_df = df_telem.filter(
+        (pl.col("Time") >= request.start_offset_seconds) & (pl.col("Time") <= request.end_offset_seconds)
+    )
+    if slice_df.is_empty():
+        raise ValueError("Selected analysis window contains no telemetry samples.")
+
+    telemetry_summary = {
+        "driver": telem_data.get("driver_name", f"Driver #{request.driver}"),
+        "team": telem_data.get("team_name", "F1 Team"),
+        "min_speed": float(slice_df["Speed"].min()),
+        "max_speed": float(slice_df["Speed"].max()),
+        "avg_throttle": float(slice_df["Throttle"].mean()),
+        "peak_brake": float(slice_df["Brake"].max()),
+        "max_brake": float(slice_df["Brake"].max()),
+        "min_throttle": float(slice_df["Throttle"].min()),
+        "duration_seconds": request.end_offset_seconds - request.start_offset_seconds,
+        "circuit": f"Circuit {request.event} ({request.year})",
+        "event": request.event,
+        "year": request.year,
+        "source": telem_data.get("source", "SYNTHETIC"),
+    }
+    meta_description = (
+        f"{session_id} Driver #{request.driver} ({telem_data.get('driver_name', 'F1')}) "
+        f"anomaly slice {request.start_offset_seconds}s-{request.end_offset_seconds}s"
+    )
+    return image_path, telemetry_summary, meta_description
+
+
 def _build_f1_analysis(request: AnomalyAnalysisRequest):
     session_id = f"{request.year}_{request.event}_{request.session_type}"
 
     if not has_cached_session(request.year, request.event, request.session_type):
-        telem_data = generate_f1_session_telemetry(
+        openf1 = fetch_openf1_telemetry(
             year=request.year,
-            event_id=request.event,
+            event=request.event,
             session_type=request.session_type,
-            driver_number=request.driver,
+            driver=request.driver,
         )
-        times, speeds, throttles, brakes, gears, rpms = telem_data["series"]
-        df_telem = pl.DataFrame({
-            "Time": times,
-            "Speed": speeds,
-            "Throttle": throttles,
-            "Brake": brakes,
-            "Gear": gears,
-            "RPM": rpms,
-        })
-
-        channels = request.channels if any(
-            channel.lower() in {"speed", "throttle", "brake"} for channel in request.channels
-        ) else ["Speed", "Throttle", "Brake"]
-
-        image_path = ROICropper.generate_dataframe_roi_crop(
-            df=df_telem,
-            start_time=request.start_offset_seconds,
-            end_time=request.end_offset_seconds,
-            channels=channels,
-            session_id=session_id,
+        if openf1 is not None:
+            return _analyze_f1_series(request, openf1)
+        return _analyze_f1_series(
+            request,
+            generate_f1_session_telemetry(
+                year=request.year,
+                event_id=request.event,
+                session_type=request.session_type,
+                driver_number=request.driver,
+            ),
         )
-
-        slice_df = df_telem.filter(
-            (pl.col("Time") >= request.start_offset_seconds) & (pl.col("Time") <= request.end_offset_seconds)
-        )
-        if slice_df.is_empty():
-            raise ValueError("Selected analysis window contains no telemetry samples.")
-
-        telemetry_summary = {
-            "driver": telem_data.get("driver_name", f"Driver #{request.driver}"),
-            "team": telem_data.get("team_name", "F1 Team"),
-            "min_speed": float(slice_df["Speed"].min()),
-            "max_speed": float(slice_df["Speed"].max()),
-            "avg_throttle": float(slice_df["Throttle"].mean()),
-            "peak_brake": float(slice_df["Brake"].max()),
-            "max_brake": float(slice_df["Brake"].max()),
-            "min_throttle": float(slice_df["Throttle"].min()),
-            "duration_seconds": request.end_offset_seconds - request.start_offset_seconds,
-            "circuit": f"Circuit {request.event} ({request.year})",
-            "event": request.event,
-            "year": request.year,
-        }
-        meta_description = (
-            f"{session_id} Driver #{request.driver} ({telem_data.get('driver_name', 'F1')}) "
-            f"anomaly slice {request.start_offset_seconds}s-{request.end_offset_seconds}s"
-        )
-        return image_path, telemetry_summary, meta_description
 
     try:
         processor = FastF1Processor()
@@ -578,43 +605,20 @@ def _build_f1_analysis(request: AnomalyAnalysisRequest):
     except Exception as exc:
         logger.warning("FastF1 analysis fallback for %s %s: %s", request.year, request.event, exc)
 
-    telem_data = generate_f1_session_telemetry(
-        request.year, request.event, request.session_type, request.driver
+    openf1 = fetch_openf1_telemetry(
+        year=request.year,
+        event=request.event,
+        session_type=request.session_type,
+        driver=request.driver,
     )
-    times, speeds, throttles, brakes, gears, rpms = telem_data["series"]
-    df_telem = pl.DataFrame({
-        "Time": times,
-        "Speed": speeds,
-        "Throttle": throttles,
-        "Brake": brakes,
-        "Gear": gears,
-        "RPM": rpms,
-    })
-    image_path = ROICropper.generate_dataframe_roi_crop(
-        df=df_telem,
-        start_time=request.start_offset_seconds,
-        end_time=request.end_offset_seconds,
-        channels=request.channels,
-        session_id=session_id,
+    if openf1 is not None:
+        return _analyze_f1_series(request, openf1)
+    return _analyze_f1_series(
+        request,
+        generate_f1_session_telemetry(
+            request.year, request.event, request.session_type, request.driver
+        ),
     )
-    slice_df = df_telem.filter(
-        (pl.col("Time") >= request.start_offset_seconds) & (pl.col("Time") <= request.end_offset_seconds)
-    )
-    if slice_df.is_empty():
-        raise ValueError("Selected analysis window contains no telemetry samples.")
-    telemetry_summary = {
-        "driver": request.driver,
-        "min_speed": float(slice_df["Speed"].min()),
-        "max_speed": float(slice_df["Speed"].max()),
-        "max_brake": int(slice_df["Brake"].max()),
-        "min_throttle": int(slice_df["Throttle"].min()),
-        "duration_seconds": request.end_offset_seconds - request.start_offset_seconds,
-        "circuit": f"Circuit {request.event} ({request.year})",
-        "event": request.event,
-        "year": request.year,
-    }
-    meta_description = f"{session_id} Driver {request.driver} anomaly trace"
-    return image_path, telemetry_summary, meta_description
 
 
 def _run_analysis(request: AnomalyAnalysisRequest) -> dict:

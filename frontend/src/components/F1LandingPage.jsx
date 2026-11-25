@@ -164,7 +164,7 @@ function WaveformPreview() {
               className="text-[10px]"
               style={{ color: 'var(--text-disabled)', fontFamily: "'JetBrains Mono', monospace" }}
             >
-              100Hz · FastF1 3.4 · 2025
+              4Hz real · OpenF1 / FastF1 · 2025
             </span>
             {activeTab && (
               <span
@@ -405,8 +405,8 @@ export default function F1LandingPage({ onLaunch, onBack }) {
             className="f1-hero-sub text-[15px] leading-relaxed max-w-xl"
             style={{ color: 'var(--text-secondary)', fontFamily: "'Inter', sans-serif", willChange: 'transform, opacity' }}
           >
-            Select your season, Grand Prix, and driver. Drag a window on the 100Hz waveform.
-            Get structured, evidence-grounded diagnostics from a 100Hz waveform.
+            Select your season, Grand Prix, and driver. Drag a window on the real lap trace.
+            Get structured, evidence-grounded diagnostics from the telemetry waveform.
           </p>
 
           {/* CTAs */}
@@ -503,8 +503,8 @@ export default function F1LandingPage({ onLaunch, onBack }) {
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <StepCard number={1} icon={Search}  title="Select Session" body="Choose season, Grand Prix, session type and driver from the 2025 and 2026 FIA calendars. Data loads from FastF1 at 100Hz resolution." />
-            <StepCard number={2} icon={Scissors} title="Slice Anomaly"  body="Drag on the 100Hz telemetry chart to crop any micro-sector window. The system generates a waveform PNG artifact for CLIP embedding." />
+            <StepCard number={1} icon={Search}  title="Select Session" body="Choose season, Grand Prix, session type and driver from the 2025 and 2026 FIA calendars. Data streams from OpenF1 (real car telemetry, ~4 Hz) or a local FastF1 cache." />
+            <StepCard number={2} icon={Scissors} title="Slice Anomaly"  body="Drag on the telemetry chart to crop any micro-sector window. The system generates a waveform PNG artifact for CLIP embedding." />
             <StepCard number={3} icon={Cpu}      title="Get Diagnosis"  body="CLIP embeds the waveform, FAISS retrieves historical precedents, and the optional 7B QLoRA adapter (or deterministic heuristic fallback) returns a structured engineering report." />
           </div>
         </div>
@@ -554,7 +554,7 @@ export default function F1LandingPage({ onLaunch, onBack }) {
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <FeatureCard icon={Activity} title="FastF1 Integration"    body="Direct API access to the FastF1 data pipeline with 100Hz car telemetry, track position, and tyre data for 2025 and 2026 FIA sessions."  stat="FastF1 3.4.0" />
+            <FeatureCard icon={Activity} title="OpenF1 + FastF1 Data" body="Real 2025/2026 car telemetry from OpenF1 (~4 Hz) and cached FastF1 sessions, with track position and tyre data. Synthetic traces are always labelled." stat="OpenF1 · FastF1" />
             <FeatureCard icon={Database} title="OpenCLIP Embedding"    body="Waveform PNG crops encoded via OpenCLIP ViT-B/32 into 512-dimensional unit-sphere vectors for semantic similarity search."               stat="ViT-B-32 · 512-dim" />
             <FeatureCard icon={Shield}   title="FAISS Vector Search"   body="IndexFlatIP inner product similarity over the cosine-normalized embedding space for deterministic nearest-neighbor precedent retrieval."     stat="IndexFlatIP · Cosine Sim" />
             <FeatureCard icon={Cpu}      title="Hallucination Failsafe" body="A 0.65 confidence threshold gate rejects low-certainty model outputs before they surface to the engineer. Zero ungrounded diagnoses."       stat="0.65 Threshold" />
@@ -587,7 +587,7 @@ export default function F1LandingPage({ onLaunch, onBack }) {
             Ready to Analyze?
           </h2>
           <p className="text-[15px] max-w-md" style={{ color: 'var(--text-secondary)' }}>
-            Launch the F1 workspace and start cropping anomaly windows on live 100Hz telemetry.
+            Launch the F1 workspace and start cropping anomaly windows on live telemetry.
           </p>
           <button
             type="button"

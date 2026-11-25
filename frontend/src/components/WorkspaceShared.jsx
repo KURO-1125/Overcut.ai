@@ -336,7 +336,7 @@ export function ResultsPanel({
           >
             {isEV
               ? 'Drag on the 50Hz chart above to highlight any voltage sag, thermal spike, or current anomaly, then click Execute EV Diagnosis.'
-              : 'Drag on the 100Hz chart above to highlight any braking event, corner, or speed anomaly, then click Execute AI Diagnosis.'}
+              : 'Drag on the chart above to highlight any braking event, corner, or speed anomaly, then click Execute AI Diagnosis.'}
           </p>
         </div>
 

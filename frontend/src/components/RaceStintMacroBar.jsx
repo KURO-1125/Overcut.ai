@@ -412,7 +412,7 @@ export default function RaceStintMacroBar({
         </div>
 
         <div className="text-[10px] text-zinc-400">
-          Click any lap bar to stream its 100Hz telemetry
+          Click any lap bar to stream its telemetry
         </div>
       </div>
     </div>

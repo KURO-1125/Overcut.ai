@@ -44,6 +44,14 @@ def _env_int(name: str, default: int) -> int:
         return default
 
 
+def _env_float(name: str, default: float) -> float:
+    try:
+        return float(os.getenv(name, str(default)))
+    except ValueError:
+        logger.warning("Invalid number for %s; using %s", name, default)
+        return default
+
+
 ENV = os.getenv("OVERCUT_ENV", "development").strip().lower()
 IS_PRODUCTION = ENV == "production"
 
@@ -93,6 +101,17 @@ MONGO_URI = os.getenv("OVERCUT_MONGO_URI", "").strip()
 # ─── Model providers ──────────────────────────────────────────────────────────
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
+
+# ─── Telemetry sources ───────────────────────────────────────────────────────
+# OpenF1 serves historical F1 telemetry (~3.7 Hz) without authentication while
+# F1's archive stays locked; set OVERCUT_OPENF1=off to force the synthetic path.
+OPENF1_ENABLED = os.getenv("OVERCUT_OPENF1", "auto").strip().lower() not in {
+    "off",
+    "0",
+    "false",
+    "disabled",
+}
+OPENF1_TIMEOUT = _env_float("OVERCUT_OPENF1_TIMEOUT", 6.0)
 
 # ─── Compute limits ───────────────────────────────────────────────────────────
 # Heavy analyses run in the threadpool; cap how many can run concurrently so a

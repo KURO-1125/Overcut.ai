@@ -367,7 +367,7 @@ ${(data.historical_precedents || []).map((p, i) => `### Match #${i + 1} (${p.sim
                     className="p-6 text-center text-[11px]"
                     style={{ color: 'var(--text-disabled)', ...monoStyle }}
                   >
-                    High-contrast waveform crop rendered at 100Hz
+                    High-contrast waveform crop rendered from the telemetry slice
                   </span>
                 )}
               </div>

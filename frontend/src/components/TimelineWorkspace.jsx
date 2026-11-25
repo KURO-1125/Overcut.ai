@@ -361,6 +361,16 @@ export default function TimelineWorkspace({
 
   const isEV = mode === 'ev' || telemetry?.domain === 'EV_BATTERY'
 
+  // Real F1 feeds (OpenF1, FastF1) sample at ~4 Hz; the synthetic path is
+  // generated at 100 Hz. Label whatever is actually in the payload.
+  const sampleRateHz = useMemo(() => {
+    const times = telemetry?.series?.[0]
+    if (!times || times.length < 2) return null
+    const span = times[times.length - 1] - times[0]
+    if (!(span > 0)) return null
+    return Math.round((times.length - 1) / span)
+  }, [telemetry])
+
   // Size the chart slot so the chart column matches the side panel exactly
   useEffect(() => {
     const measure = () => {
@@ -795,7 +805,7 @@ export default function TimelineWorkspace({
             >
               {isEV
                 ? 'Choose a cycle from the selector above, then load the 50Hz electrochemical telemetry stream.'
-                : 'Choose year, event, session type, and driver from the selectors above, then load the 100Hz lap telemetry.'}
+                : 'Choose year, event, session type, and driver from the selectors above, then load the lap telemetry.'}
             </p>
           </div>
           <button type="button" onClick={() => setChartReady(true)}
@@ -827,12 +837,18 @@ export default function TimelineWorkspace({
                   className="text-[10px] font-bold tracking-[0.1em] uppercase"
                   style={{ color: isEV ? 'var(--ev-signal)' : 'var(--f1-signal)', fontFamily: "'JetBrains Mono', monospace" }}
                 >
-                  {isEV ? '50Hz EV BMS Battery Feed' : '100Hz Telemetry Canvas'}
+                  {isEV ? '50Hz EV BMS Battery Feed' : sampleRateHz ? `${sampleRateHz}Hz Telemetry Feed` : 'Telemetry Canvas'}
                 </span>
                 {telemetry?.simulated && (
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded"
                     style={{ background: 'rgba(255,184,0,0.12)', color: '#FFB800', border: '1px solid rgba(255,184,0,0.3)', fontFamily: "'JetBrains Mono', monospace" }}
                   >SIMULATED FEED</span>
+                )}
+                {telemetry?.source === 'OPENF1' && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                    title={telemetry.data_source || 'Telemetry data: OpenF1 (CC BY-NC-SA 4.0)'}
+                    style={{ background: 'rgba(0,240,255,0.1)', color: '#00f0ff', border: '1px solid rgba(0,240,255,0.3)', fontFamily: "'JetBrains Mono', monospace" }}
+                  >OPENF1 · CC BY-NC-SA</span>
                 )}
               </div>
               <div className="hidden sm:flex items-center gap-1.5 font-mono text-[10px]">

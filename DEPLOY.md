@@ -69,17 +69,25 @@ quota only covers the probe button.
 
 **Seasons and F1 data source.** The API serves the 2025 and 2026 seasons only,
 matching the dashboard's season picker; `/api/f1/*` and `/api/telemetry/stream`
-answer **400** for any other year. Telemetry uses real fastf1 laps when that
-session is already in `data/raw_cache/<year>/` (verified 2026-11-25: the cached
-2023 Monaco qualifying loads offline in 5.4 s, 420 laps), and the synthetic
-generator otherwise. As of 2026-11-25 the network path cannot supply sessions:
-`livetiming.formula1.com` answers **401** and the `livetiming-mirror.fastf1.dev`
-fallback answers **404**, from this machine and from the Space. So on both
-deployments the stream is synthetic and labelled: the response carries
-`"simulated": true`, the timeline renders a `SIMULATED FEED` badge, and the
-generator applies a deterministic per-driver offset/scale (seeded by car
-number) so each driver's trace is distinct. EV telemetry is generated on the
-server in both environments.
+answer **400** for any other year. Telemetry resolution order:
+
+1. **Cached fastf1** — real laps when the session is already in
+   `data/raw_cache/<year>/` (verified 2026-11-25: the cached 2023 Monaco
+   qualifying loads offline in 5.4 s, 420 laps). The network path is dead:
+   `livetiming.formula1.com` answers **401** and the mirror **404**.
+2. **OpenF1** — real 2025/2026 car telemetry from `api.openf1.org`, which
+   ingests the still-open live-timing feed (~3.7 Hz). Verified 2026-11-25:
+   2025/2026 Monaco qualifying laps return 283–285 samples per lap in ~1 s,
+   including races after F1's 15 Oct lockout (Las Vegas 2026-11-22). Data is
+   cached under `data/raw_cache/openf1/`; set `OVERCUT_OPENF1=off` to disable.
+   OpenF1 data is **CC BY-NC-SA 4.0** (attribution required, no commercial
+   use) and the service is unofficial, so treat availability as best-effort.
+3. **Synthetic generator** — labelled fallback: the response carries
+   `"simulated": true`, the timeline renders a `SIMULATED FEED` badge, and the
+   generator applies a deterministic per-driver offset/scale (seeded by car
+   number) so each driver's trace is distinct.
+
+EV telemetry is generated on the server in both environments.
 
 ## 2b. API — HF Docker Space (paid alternative)
 
