@@ -330,7 +330,7 @@ export default function F1LandingPage({ onLaunch, onBack }) {
 
   const STATS = [
     { icon: Map,      value: '24',         unit: 'Circuits',  label: 'FIA 2025 Calendar' },
-    { icon: Activity, value: '100',        unit: 'Hz',        label: 'Sampling Rate' },
+    { icon: Activity, value: '4',          unit: 'Hz',        label: 'Real Feed Rate' },
     { icon: Flag,     value: '2025–26',    unit: '',          label: 'Season Coverage' },
     { icon: Cpu,      value: '7B',         unit: 'QLoRA',     label: 'On-Device AI' },
   ]

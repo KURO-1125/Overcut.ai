@@ -196,7 +196,7 @@ export default function AppHeader({ currentView, onNavigate, mode }) {
 
           {/* Live telemetry chips */}
           <StatusChip color={activeSignal}>
-            {mode === 'ev' ? '50HZ PACK' : '100HZ LAP'}
+            {mode === 'ev' ? '50HZ PACK' : '4HZ FEED'}
           </StatusChip>
           <StatusChip color="var(--accent)">
             VLM READY

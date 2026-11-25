@@ -815,10 +815,10 @@ export default function TimelineWorkspace({
             onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
           >
             <Play size={14} fill="currentColor" />
-            {isEV ? 'Load BMS Telemetry Stream' : 'Load 100Hz Telemetry Stream'}
+            {isEV ? 'Load BMS Telemetry Stream' : 'Load Lap Telemetry Stream'}
           </button>
           <p className="text-[11px]" style={{ color: 'var(--text-disabled)', fontFamily: "'JetBrains Mono', monospace" }}>
-            {isEV ? '50Hz · NASA Ames Li-ion · NMC 811' : '100Hz · FastF1 3.4 · FIA Data Feed'}
+            {isEV ? '50Hz · NASA Ames Li-ion · NMC 811' : '~4Hz · OpenF1 / FastF1 · Real telemetry'}
           </p>
         </div>
       )}
@@ -971,7 +971,7 @@ export default function TimelineWorkspace({
                     style={{ color: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}
                   >
                     <Activity className="animate-spin" size={18} style={{ color: isEV ? 'var(--ev-signal)' : 'var(--f1-signal)' }} />
-                    <span>{isEV ? 'Streaming 50Hz BMS telemetry…' : 'Streaming 100Hz lap telemetry…'}</span>
+                    <span>{isEV ? 'Streaming 50Hz BMS telemetry…' : 'Streaming lap telemetry…'}</span>
                   </div>
                 )}
                 <div ref={chartContainerRef} className="w-full h-full" style={{ display: loading ? 'none' : 'block' }} />
