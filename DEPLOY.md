@@ -6,13 +6,12 @@ host-agnostic. The API runs CPU-only, so diagnosis is served by the labelled
 `DETERMINISTIC_HEURISTIC` engine; the 7B QLoRA tier stays local until the AWS
 migration.
 
-> **Cost note (verified 2026-11-24).** Vercel Hobby is free. On Hugging Face,
-> only *Static* Spaces are free; per the official Spaces docs, "Gradio and Docker
-> Spaces run on compute and require a paid plan to create: PRO for personal
-> accounts". CPU Basic hardware itself carries no hourly cost, and Spaces on free
-> hardware sleep when idle. So the Docker Space below needs an HF PRO plan —
-> earlier notes in this file calling it free were wrong. Zero-cost options are
-> listed in §3.
+> **Cost note (verified 2026-11-25).** Vercel Hobby is free. On Hugging Face, a
+> free account cannot create a Gradio Space on `cpu-basic`: the Hub refuses it
+> with HTTP 402 ("hosting Gradio and Docker Spaces on free cpu-basic requires a
+> PRO subscription"). Free accounts can still create Gradio Spaces on
+> **ZeroGPU** (`zero-a10g`, up to 2 per account), which is the route in §2 and
+> the one deployed live. Docker Spaces remain PRO-only (§2b).
 
 ## 1. Frontend — Vercel
 
@@ -27,38 +26,62 @@ migration.
 No rewrites are needed: the app routes in state, so every URL serves
 `index.html`.
 
-## 2. API — Hugging Face Space (Docker, CPU) — requires HF PRO
+## 2. API — HF Space (Gradio SDK, ZeroGPU, free) — deployed
 
-Steps below assume an HF PRO plan; creating a Docker Space is refused on a free
-account.1. huggingface.co → **New Space** → SDK **Docker** → *Blank* → name it
-   `overcut-api`. Public is fine (the API has no secrets).
-2. Upload the three files from [`deploy/hf-space/`](deploy/hf-space) to the
-   Space repo root: `Dockerfile`, `README.md` and `start.sh` (web UI:
-   *Files → Add file*, or `git clone` the Space and copy them in).
-3. Space **Settings → Variables**:
-   - `OVERCUT_CORS_ORIGINS` = `https://<your-vercel-domain>`
-   - optional: `OVERCUT_API_KEY` (then also set `VITE_API_KEY` in Vercel — note
-     that value is public in the bundle, so it only deters casual scraping)
-   - optional: `OVERCUT_JWT_SECRET`. Without it, `start.sh` generates an
-     ephemeral secret per container, so demo logins reset on restart.
-4. Wait for the build (~5 min verified locally: torch CPU, open_clip, fastf1,
-   matplotlib; image 3.76 GB).
-5. Health check: `https://<space>.hf.space/api/health` returns
-   `{"status":"healthy","engine_ready":true,...}`. Startup loads the OpenCLIP
-   weights synchronously — measured **200 s** on a cold container, so expect a
-   long first "starting" phase before the port opens; subsequent requests are
-   fast.
+Files live in [`deploy/hf-gradio/`](deploy/hf-gradio). The entry point mounts the
+FastAPI gateway at `/` and serves a small Gradio page (with a GPU attach probe,
+which ZeroGPU requires) alongside it.
 
-The Dockerfile clones `main` from GitHub at build time. After pushing backend
-changes, open the Space → **Factory rebuild**.
+```
+hf repos create <user>/overcut-api --type space --sdk gradio --public --flavor zero-a10g
+hf upload <user>/overcut-api deploy/hf-gradio . --type space
+hf spaces wait <user>/overcut-api --timeout 15m
+```
 
-## 3. Hosting options and cost (verified 2026-11-24)
+Three ZeroGPU constraints are handled in `app.py` / `requirements.txt`:
+
+| Constraint | Handling |
+| :--- | :--- |
+| ZeroGPU refuses torch builds other than 2.8–2.13 | torch/torchvision are not pinned; the runtime's preinstalled pair is used |
+| ZeroGPU refuses to start without a `@spaces.GPU` function | `gpu_probe()` button on the root page (never called by the API) |
+| The Space injects `GRADIO_SSR_MODE=True`; Gradio's Node SSR server binds 7860 before uvicorn | `os.environ["GRADIO_SSR_MODE"] = "False"` before importing gradio |
+
+Also note: the image ships Gradio 6 (starlette ≥ 1.0), so fastapi/uvicorn/
+pydantic/httpx are left unpinned here — `backend/requirements.txt` pins are older.
+
+Set in Space **Settings → Variables** (optional; the API currently reflects any
+origin):
+
+- `OVERCUT_CORS_ORIGINS` = `https://<your-vercel-domain>`
+- `OVERCUT_API_KEY` (then also `VITE_API_KEY` in Vercel; the bundle is public, so
+  this only deters casual scraping)
+- JWT signing defaults to `SPACE_SIGNING_SECRET`, so demo logins survive restarts
+
+First start downloads the 605 MB OpenCLIP checkpoint (seconds on the Space's
+link) and warms the FAISS store. Verified 2026-11-25 on
+`kuro1125-overcut-api.hf.space`: `/api/health` → `{"status":"healthy",
+"engine_ready":true}`; `POST /api/demo` → 200 in **6.3 s** with
+`provider: DETERMINISTIC_HEURISTIC` and a served PNG crop.
+
+Free ZeroGPU Spaces sleep when idle (48 h timer), re-clone the repo to `/tmp` on
+wake, and have a daily ZeroGPU quota — the API itself never uses the GPU, so the
+quota only covers the probe button.
+
+## 2b. API — HF Docker Space (paid alternative)
+
+Requires HF PRO. Use [`deploy/hf-space/`](deploy/hf-space): SDK **Docker**, blank,
+name `overcut-api`, upload `Dockerfile`, `README.md`, `start.sh`, set the same
+variables, wait ~5 min for the build (torch CPU, open_clip, fastf1, matplotlib;
+image 3.76 GB). The Dockerfile clones `main` from GitHub at build time, so a
+**Factory rebuild** ships backend changes. Health and startup behave as in §2.
+
+## 3. Hosting options and cost (re-verified 2026-11-25)
 
 | Option | Cost | Notes |
 | :--- | :--- | :--- |
 | Vercel Hobby (frontend) | Free | Static hosting; the app works without the API, labelling data `SIMULATED` |
+| HF Gradio Space on ZeroGPU | Free (up to 2 Spaces) | **Live route.** `cpu-basic` is refused on free accounts (HTTP 402); ZeroGPU requires torch 2.8–2.13, a `@spaces.GPU` function and SSR mode disabled — all handled in `deploy/hf-gradio/` |
 | HF Docker Space, CPU Basic | HF PRO (paid) | Configs in `deploy/hf-space/` build and smoke-test cleanly; 2 vCPU / 16 GB; sleeps when idle; set `OVERCUT_JWT_SECRET` = `SPACE_SIGNING_SECRET` (stable across restarts) |
-| Free HF account, Gradio SDK | Free (up to 2 Spaces on ZeroGPU) | Only Gradio Spaces are permitted on free accounts. Serving this FastAPI app on port 7860 from a Gradio entry script is possible but untested and fragile |
 | Render free web service | Free | 512 MB RAM, spins down when idle — too small for torch + OpenCLIP, would need a heuristic-only image |
 | Local backend + Cloudflare quick tunnel | Free, no account | Public HTTPS URL while the laptop runs; URL changes per start; fine for a live demo |
 | AWS (App Runner / ECS Fargate; EC2 `g5` for the local 7B tier) | Pending credits | Same Docker image; only `VITE_API_URL` and `OVERCUT_CORS_ORIGINS` change |

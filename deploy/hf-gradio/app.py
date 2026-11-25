@@ -1,8 +1,10 @@
 """Hugging Face Gradio Space entry point.
 
-Free personal accounts can host Gradio Spaces (Docker Spaces require PRO), so
-this mounts the FastAPI gateway at the root and serves a minimal Gradio page at
-/ui. The Space only needs this file, README.md and requirements.txt.
+Free personal accounts cannot use cpu-basic for Gradio Spaces, so this runs on
+ZeroGPU hardware, which in turn requires at least one @spaces.GPU function at
+startup. The gateway itself is CPU-only; the GPU function is a small attach
+probe exposed on the root page. The Space needs this file, README.md and
+requirements.txt.
 """
 
 import os
@@ -13,6 +15,9 @@ import sys
 os.environ.setdefault("OVERCUT_ENV", "production")
 os.environ.setdefault("OVERCUT_DATA_DIR", "/tmp/overcut-data")
 os.environ.setdefault("HF_HOME", "/tmp/hf-cache")
+# The Space injects GRADIO_SSR_MODE=True; Gradio then starts a Node SSR server
+# that binds 7860 before our uvicorn can, so it must be off.
+os.environ["GRADIO_SSR_MODE"] = "False"
 os.environ.setdefault(
     "OVERCUT_JWT_SECRET",
     os.getenv("SPACE_SIGNING_SECRET") or secrets.token_urlsafe(48),
@@ -31,14 +36,35 @@ sys.path.insert(0, SOURCE_DIR)
 import gradio as gr  # noqa: E402
 from backend.api.main import app as api_app  # noqa: E402
 
+try:
+    import spaces
+except ImportError:
+    class _SpacesStub:
+        def GPU(self, *args, **kwargs):
+            return lambda fn: fn
+
+    spaces = _SpacesStub()
+
+
+@spaces.GPU(duration=5)
+def gpu_probe() -> str:
+    import torch
+
+    return f"torch {torch.__version__} · cuda {torch.cuda.is_available()}"
+
+
 with gr.Blocks(title="Overcut.ai API") as ui:
     gr.Markdown(
         "# Overcut.ai API\n\n"
         "This Space serves the Overcut.ai REST gateway. The dashboard is served "
         "separately; open `/api/health` to check `engine_ready`."
     )
+    with gr.Row():
+        probe_btn = gr.Button("ZeroGPU attach probe")
+        probe_out = gr.Textbox(label="Result", interactive=False)
+    probe_btn.click(gpu_probe, outputs=probe_out)
 
-api_app = gr.mount_gradio_app(api_app, ui, path="/ui")
+api_app = gr.mount_gradio_app(api_app, ui, path="/")
 
 if __name__ == "__main__":
     import uvicorn
