@@ -43,17 +43,49 @@ def test_2025_driver_lineup_and_transfers():
     ham = next(d for d in drivers if d["code"] == "HAM")
     assert ham["number"] == "44"
     assert ham["team"] == "Ferrari"
-    assert ham["color"] == "#E80020"
+    assert ham["color"] == "#ED1131"
 
-    # Verify Kimi Antonelli at Mercedes-AMG
+    # Verify Kimi Antonelli at Mercedes
     ant = next(d for d in drivers if d["code"] == "ANT")
     assert ant["number"] == "12"
-    assert ant["team"] == "Mercedes-AMG"
+    assert ant["team"] == "Mercedes"
 
     # Verify Carlos Sainz at Williams
     sai = next(d for d in drivers if d["code"] == "SAI")
     assert sai["number"] == "55"
     assert sai["team"] == "Williams"
+
+    # Mid-season swaps: Tsunoda to Red Bull, Colapinto replaced Doohan
+    tsu = next(d for d in drivers if d["code"] == "TSU")
+    assert tsu["team"] == "Red Bull Racing"
+    assert any(d["code"] == "COL" and d["team"] == "Alpine" for d in drivers)
+    assert not any(d["code"] == "DOO" for d in drivers)
+
+def test_2026_driver_lineup():
+    drivers = get_season_drivers(2026)
+    assert len(drivers) == 22
+
+    nor = next(d for d in drivers if d["code"] == "NOR")
+    assert nor["number"] == "1"
+    assert nor["team"] == "McLaren"
+
+    ver = next(d for d in drivers if d["code"] == "VER")
+    assert ver["number"] == "3"
+    assert ver["team"] == "Red Bull Racing"
+
+    teams = {d["team"] for d in drivers}
+    assert {"Cadillac", "Audi", "Racing Bulls"} <= teams
+    assert any(d["code"] == "CAM" and d["team"] == "Haas F1 Team" for d in drivers)
+
+def test_2026_calendar_matches_the_raced_season():
+    cal_2026 = get_season_calendar(2026)
+    event_ids = [e["id"] for e in cal_2026]
+    # Sakhir and Jeddah were cancelled; Barcelona/Madrid split the Spanish rounds
+    # and the relocated Bahrain GP ran at Sepang.
+    assert "bahrain" not in event_ids
+    assert "saudi_arabia" not in event_ids
+    assert {"barcelona", "madrid", "malaysia"} <= set(event_ids)
+    assert event_ids[-1] == "abu_dhabi"
 
 def test_generate_track_geometry():
     geom = generate_track_geometry("silverstone", lap_time=87.5)
@@ -62,6 +94,13 @@ def test_generate_track_geometry():
     assert len(geom["points"]) >= 200
     assert "corner_pins" in geom
     assert len(geom["corner_pins"]) > 0
+
+def test_templated_2026_circuits_keep_their_identity():
+    for circuit_id, name in (("madrid", "Madring"), ("malaysia", "Sepang International Circuit")):
+        geom = generate_track_geometry(circuit_id, lap_time=90.0)
+        assert geom["circuit_name"] == name
+        assert geom["geometry_source"] == "template"
+        assert len(geom["corner_pins"]) > 0
 
 def test_generate_f1_session_telemetry():
     telemetry = generate_f1_session_telemetry(
@@ -108,7 +147,7 @@ def test_api_telemetry_stream_2025_session():
     data = res.json()
     assert data["status"] == "success"
     assert data["driver_code"] == "ANT"
-    assert data["team_name"] == "Mercedes-AMG"
+    assert data["team_name"] == "Mercedes"
     assert len(data["series"]) == 6
     assert data["total_laps"] == 52
     assert "laps_summary" in data

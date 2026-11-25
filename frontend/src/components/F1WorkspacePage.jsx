@@ -59,7 +59,7 @@ export default function F1WorkspacePage({
 
           <StyledSelect value={selectedEvent} onChange={e => setSelectedEvent(e.target.value)} style={{ maxWidth: '200px' }}>
             {availableEvents.map(ev => (
-              <option key={ev.id} value={ev.id}>{ev.name}</option>
+              <option key={ev.id} value={ev.id}>R{ev.round} · {ev.name}</option>
             ))}
           </StyledSelect>
 

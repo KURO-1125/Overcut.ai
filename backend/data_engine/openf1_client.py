@@ -62,6 +62,9 @@ CIRCUIT_NAMES = {
     "imola": "Imola",
     "monaco": "Monte Carlo",
     "spain": "Catalunya",
+    "barcelona": "Catalunya",
+    "madrid": "Madring",
+    "malaysia": "Kuala Lumpur",
     "canada": "Montreal",
     "austria": "Spielberg",
     "silverstone": "Silverstone",
@@ -229,17 +232,20 @@ def _build_track_map(
     svg_parts.append("Z")
 
     corner_pins = []
-    for corner in geometry.get("corner_pins", []):
-        mid_time = (corner["start"] + corner["end"]) / 2.0
-        closest = int(np.argmin(np.abs(loc_times - mid_time)))
-        corner_pins.append({
-            "id": corner["id"],
-            "name": corner["name"],
-            "x": points[closest]["x"],
-            "y": points[closest]["y"],
-            "start": corner["start"],
-            "end": corner["end"],
-        })
+    # Template layouts (Madrid, Sepang) carry approximate corner timing windows;
+    # on a real GPS trace only the verified circuit maps may label corners.
+    if geometry.get("geometry_source") == "accurate":
+        for corner in geometry.get("corner_pins", []):
+            mid_time = (corner["start"] + corner["end"]) / 2.0
+            closest = int(np.argmin(np.abs(loc_times - mid_time)))
+            corner_pins.append({
+                "id": corner["id"],
+                "name": corner["name"],
+                "x": points[closest]["x"],
+                "y": points[closest]["y"],
+                "start": corner["start"],
+                "end": corner["end"],
+            })
 
     return {
         "viewBox": f"0 0 {width} {height}",
@@ -359,6 +365,52 @@ def _assemble_telemetry(
         "channels": ["Time (s)", "Speed (km/h)", "Throttle (%)", "Brake (%)", "Gear", "RPM"],
         "series": [times, speeds, throttles, brakes, gears, rpms],
     }
+
+
+def fetch_openf1_drivers(
+    year: int, event: str, session_type: str = "Q"
+) -> Optional[List[Dict[str, Any]]]:
+    """Returns the real entry list for a session, or None when unavailable.
+
+    Driver lineups change mid-season (2025: Doohan→Colapinto, Lawson↔Tsunoda;
+    2026: Ocon→Camara after round 16), so the season roster alone cannot
+    describe an arbitrary race.
+    """
+    if not OPENF1_ENABLED:
+        return None
+
+    try:
+        session = _resolve_session(year, event, session_type)
+        if session is None:
+            return None
+        rows = _fetch_json(f"{BASE_URL}/drivers?session_key={session['session_key']}")
+        if not rows:
+            return None
+
+        drivers: List[Dict[str, Any]] = []
+        seen: set = set()
+        for row in rows:
+            number = str(row.get("driver_number") or "").strip()
+            if not number or number in seen:
+                continue
+            seen.add(number)
+            colour = row.get("team_colour") or ""
+            if colour and not colour.startswith("#"):
+                colour = f"#{colour}"
+            name = " ".join(
+                part for part in (row.get("first_name"), row.get("last_name")) if part
+            ) or row.get("full_name") or f"Driver #{number}"
+            drivers.append({
+                "number": number,
+                "code": (row.get("name_acronym") or number).upper(),
+                "name": name,
+                "team": row.get("team_name") or "",
+                "color": colour or "#FFFFFF",
+            })
+        return drivers or None
+    except Exception as exc:  # noqa: BLE001 - any failure falls back to the roster
+        logger.warning("OpenF1 drivers unavailable for %s %s %s: %s", year, event, session_type, exc)
+        return None
 
 
 def fetch_openf1_telemetry(

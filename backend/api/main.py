@@ -29,7 +29,7 @@ from backend.data_engine.f1_calendar import (
     get_seasons,
 )
 from backend.data_engine.ingestion import FastF1Processor, has_cached_session
-from backend.data_engine.openf1_client import fetch_openf1_telemetry
+from backend.data_engine.openf1_client import fetch_openf1_drivers, fetch_openf1_telemetry
 from backend.vector_store.db import VectorDB, artifact_hash
 from backend.vector_store.engine import VectorEngine
 
@@ -205,7 +205,16 @@ def get_f1_calendar(year: int = 2025):
 @app.get("/api/f1/drivers")
 def get_f1_drivers(year: int = 2025, event: str = "monaco", session_type: str = "Q"):
     _require_supported_season(year)
-    return {"status": "success", "year": year, "event": event, "drivers": get_season_drivers(year)}
+    openf1_drivers = fetch_openf1_drivers(year, event, session_type)
+    drivers = openf1_drivers or get_season_drivers(year)
+    return {
+        "status": "success",
+        "year": year,
+        "event": event,
+        "session_type": session_type,
+        "source": "OPENF1" if openf1_drivers else "ROSTER",
+        "drivers": drivers,
+    }
 
 
 @app.get("/api/telemetry/stream")

@@ -14,57 +14,111 @@ import { useAuth } from './context/AuthContext'
 const F1WorkspacePage = lazy(() => import('./components/F1WorkspacePage'))
 const EVWorkspacePage = lazy(() => import('./components/EVWorkspacePage'))
 
-// ─── Default Drivers Metadata Fallback ───────────────────────────────────────
-// Correct 2025/2026 driver grid sourced from backend f1_calendar.py
-export const DEFAULT_DRIVERS_2025_2026 = [
-  { id: '1',  number: '1',  code: 'VER', name: 'Max Verstappen',        team: 'Red Bull Racing',  color: '#3671C6' },
-  { id: '30', number: '30', code: 'LAW', name: 'Liam Lawson',           team: 'Red Bull Racing',  color: '#3671C6' },
-  { id: '4',  number: '4',  code: 'NOR', name: 'Lando Norris',          team: 'McLaren',           color: '#FF8000' },
-  { id: '81', number: '81', code: 'PIA', name: 'Oscar Piastri',         team: 'McLaren',           color: '#FF8000' },
-  { id: '16', number: '16', code: 'LEC', name: 'Charles Leclerc',       team: 'Ferrari',           color: '#E80020' },
-  { id: '44', number: '44', code: 'HAM', name: 'Lewis Hamilton',        team: 'Ferrari',           color: '#E80020' },
-  { id: '63', number: '63', code: 'RUS', name: 'George Russell',        team: 'Mercedes-AMG',     color: '#27F4D2' },
-  { id: '12', number: '12', code: 'ANT', name: 'Andrea Kimi Antonelli', team: 'Mercedes-AMG',     color: '#27F4D2' },
-  { id: '14', number: '14', code: 'ALO', name: 'Fernando Alonso',       team: 'Aston Martin',     color: '#229971' },
-  { id: '18', number: '18', code: 'STR', name: 'Lance Stroll',          team: 'Aston Martin',     color: '#229971' },
-  { id: '55', number: '55', code: 'SAI', name: 'Carlos Sainz',          team: 'Williams',         color: '#64C4FF' },
-  { id: '23', number: '23', code: 'ALB', name: 'Alexander Albon',       team: 'Williams',         color: '#64C4FF' },
-  { id: '10', number: '10', code: 'GAS', name: 'Pierre Gasly',          team: 'Alpine',           color: '#0093CC' },
-  { id: '7',  number: '7',  code: 'DOO', name: 'Jack Doohan',           team: 'Alpine',           color: '#0093CC' },
-  { id: '31', number: '31', code: 'OCO', name: 'Esteban Ocon',          team: 'Haas F1 Team',     color: '#B6BABD' },
-  { id: '87', number: '87', code: 'BEA', name: 'Oliver Bearman',        team: 'Haas F1 Team',     color: '#B6BABD' },
-  { id: '27', number: '27', code: 'HUL', name: 'Nico Hülkenberg',       team: 'Sauber / Audi',    color: '#52E252' },
-  { id: '5',  number: '5',  code: 'BOR', name: 'Gabriel Bortoleto',     team: 'Sauber / Audi',    color: '#52E252' },
-  { id: '22', number: '22', code: 'TSU', name: 'Yuki Tsunoda',          team: 'RB F1 Team',       color: '#6692FF' },
-  { id: '6',  number: '6',  code: 'HAD', name: 'Isack Hadjar',          team: 'RB F1 Team',       color: '#6692FF' },
-]
+// ─── Default Season Metadata (fallback when the API is offline) ──────────────
+// Mirrors backend/data_engine/f1_calendar.py, which is the source of truth.
+// Mid-season driver changes are resolved per session by /api/f1/drivers.
+export const DEFAULT_DRIVERS_BY_YEAR = {
+  2025: [
+    { id: '1',  number: '1',  code: 'VER', name: 'Max Verstappen',    team: 'Red Bull Racing', color: '#4781D7' },
+    { id: '22', number: '22', code: 'TSU', name: 'Yuki Tsunoda',      team: 'Red Bull Racing', color: '#4781D7' },
+    { id: '4',  number: '4',  code: 'NOR', name: 'Lando Norris',      team: 'McLaren',         color: '#F47600' },
+    { id: '81', number: '81', code: 'PIA', name: 'Oscar Piastri',     team: 'McLaren',         color: '#F47600' },
+    { id: '16', number: '16', code: 'LEC', name: 'Charles Leclerc',   team: 'Ferrari',         color: '#ED1131' },
+    { id: '44', number: '44', code: 'HAM', name: 'Lewis Hamilton',    team: 'Ferrari',         color: '#ED1131' },
+    { id: '63', number: '63', code: 'RUS', name: 'George Russell',    team: 'Mercedes',        color: '#00D7B6' },
+    { id: '12', number: '12', code: 'ANT', name: 'Kimi Antonelli',    team: 'Mercedes',        color: '#00D7B6' },
+    { id: '14', number: '14', code: 'ALO', name: 'Fernando Alonso',   team: 'Aston Martin',    color: '#229971' },
+    { id: '18', number: '18', code: 'STR', name: 'Lance Stroll',      team: 'Aston Martin',    color: '#229971' },
+    { id: '55', number: '55', code: 'SAI', name: 'Carlos Sainz',      team: 'Williams',        color: '#1868DB' },
+    { id: '23', number: '23', code: 'ALB', name: 'Alexander Albon',   team: 'Williams',        color: '#1868DB' },
+    { id: '10', number: '10', code: 'GAS', name: 'Pierre Gasly',      team: 'Alpine',          color: '#00A1E8' },
+    { id: '43', number: '43', code: 'COL', name: 'Franco Colapinto',  team: 'Alpine',          color: '#00A1E8' },
+    { id: '31', number: '31', code: 'OCO', name: 'Esteban Ocon',      team: 'Haas F1 Team',    color: '#9C9FA2' },
+    { id: '87', number: '87', code: 'BEA', name: 'Oliver Bearman',    team: 'Haas F1 Team',    color: '#9C9FA2' },
+    { id: '27', number: '27', code: 'HUL', name: 'Nico Hülkenberg',   team: 'Kick Sauber',     color: '#01C00E' },
+    { id: '5',  number: '5',  code: 'BOR', name: 'Gabriel Bortoleto', team: 'Kick Sauber',     color: '#01C00E' },
+    { id: '30', number: '30', code: 'LAW', name: 'Liam Lawson',       team: 'Racing Bulls',    color: '#6C98FF' },
+    { id: '6',  number: '6',  code: 'HAD', name: 'Isack Hadjar',      team: 'Racing Bulls',    color: '#6C98FF' },
+  ],
+  2026: [
+    { id: '1',  number: '1',  code: 'NOR', name: 'Lando Norris',      team: 'McLaren',         color: '#F47600' },
+    { id: '81', number: '81', code: 'PIA', name: 'Oscar Piastri',     team: 'McLaren',         color: '#F47600' },
+    { id: '16', number: '16', code: 'LEC', name: 'Charles Leclerc',   team: 'Ferrari',         color: '#ED1131' },
+    { id: '44', number: '44', code: 'HAM', name: 'Lewis Hamilton',    team: 'Ferrari',         color: '#ED1131' },
+    { id: '63', number: '63', code: 'RUS', name: 'George Russell',    team: 'Mercedes',        color: '#00D7B6' },
+    { id: '12', number: '12', code: 'ANT', name: 'Kimi Antonelli',    team: 'Mercedes',        color: '#00D7B6' },
+    { id: '3',  number: '3',  code: 'VER', name: 'Max Verstappen',    team: 'Red Bull Racing', color: '#4781D7' },
+    { id: '6',  number: '6',  code: 'HAD', name: 'Isack Hadjar',      team: 'Red Bull Racing', color: '#4781D7' },
+    { id: '30', number: '30', code: 'LAW', name: 'Liam Lawson',       team: 'Racing Bulls',    color: '#6C98FF' },
+    { id: '41', number: '41', code: 'LIN', name: 'Arvid Lindblad',    team: 'Racing Bulls',    color: '#6C98FF' },
+    { id: '14', number: '14', code: 'ALO', name: 'Fernando Alonso',   team: 'Aston Martin',    color: '#229971' },
+    { id: '18', number: '18', code: 'STR', name: 'Lance Stroll',      team: 'Aston Martin',    color: '#229971' },
+    { id: '55', number: '55', code: 'SAI', name: 'Carlos Sainz',      team: 'Williams',        color: '#1868DB' },
+    { id: '23', number: '23', code: 'ALB', name: 'Alexander Albon',   team: 'Williams',        color: '#1868DB' },
+    { id: '10', number: '10', code: 'GAS', name: 'Pierre Gasly',      team: 'Alpine',          color: '#00A1E8' },
+    { id: '43', number: '43', code: 'COL', name: 'Franco Colapinto',  team: 'Alpine',          color: '#00A1E8' },
+    { id: '27', number: '27', code: 'HUL', name: 'Nico Hülkenberg',   team: 'Audi',            color: '#F50537' },
+    { id: '5',  number: '5',  code: 'BOR', name: 'Gabriel Bortoleto', team: 'Audi',            color: '#F50537' },
+    { id: '11', number: '11', code: 'PER', name: 'Sergio Pérez',      team: 'Cadillac',        color: '#909090' },
+    { id: '77', number: '77', code: 'BOT', name: 'Valtteri Bottas',   team: 'Cadillac',        color: '#909090' },
+    { id: '51', number: '51', code: 'CAM', name: 'Rafael Camara',     team: 'Haas F1 Team',    color: '#9C9FA2' },
+    { id: '87', number: '87', code: 'BEA', name: 'Oliver Bearman',    team: 'Haas F1 Team',    color: '#9C9FA2' },
+  ],
+}
 
-export const DEFAULT_CALENDAR_2025 = [
-  { round: 1,  id: 'australia',      name: 'Australian Grand Prix',      circuit: 'Albert Park Circuit',           country: 'Australia',    location: 'Melbourne' },
-  { round: 2,  id: 'china',          name: 'Chinese Grand Prix',         circuit: 'Shanghai International',        country: 'China',        location: 'Shanghai' },
-  { round: 3,  id: 'japan',          name: 'Japanese Grand Prix',        circuit: 'Suzuka International',          country: 'Japan',        location: 'Suzuka' },
-  { round: 4,  id: 'bahrain',        name: 'Bahrain Grand Prix',         circuit: 'Bahrain International',         country: 'Bahrain',      location: 'Sakhir' },
-  { round: 5,  id: 'saudi_arabia',   name: 'Saudi Arabian Grand Prix',   circuit: 'Jeddah Corniche Circuit',       country: 'Saudi Arabia', location: 'Jeddah' },
-  { round: 6,  id: 'miami',          name: 'Miami Grand Prix',           circuit: 'Miami International Autodrome', country: 'USA',          location: 'Miami' },
-  { round: 7,  id: 'emilia_romagna', name: 'Emilia Romagna Grand Prix',  circuit: 'Autodromo Enzo e Dino Ferrari', country: 'Italy',        location: 'Imola' },
-  { round: 8,  id: 'monaco',         name: 'Monaco Grand Prix',          circuit: 'Circuit de Monaco',             country: 'Monaco',       location: 'Monte Carlo' },
-  { round: 9,  id: 'spain',          name: 'Spanish Grand Prix',         circuit: 'Circuit de Barcelona-Catalunya',country: 'Spain',        location: 'Barcelona' },
-  { round: 10, id: 'canada',         name: 'Canadian Grand Prix',        circuit: 'Circuit Gilles Villeneuve',     country: 'Canada',       location: 'Montreal' },
-  { round: 11, id: 'austria',        name: 'Austrian Grand Prix',        circuit: 'Red Bull Ring',                 country: 'Austria',      location: 'Spielberg' },
-  { round: 12, id: 'silverstone',    name: 'British Grand Prix',         circuit: 'Silverstone Circuit',           country: 'Great Britain',location: 'Silverstone' },
-  { round: 13, id: 'belgium',        name: 'Belgian Grand Prix',         circuit: 'Circuit de Spa-Francorchamps',  country: 'Belgium',      location: 'Spa' },
-  { round: 14, id: 'hungary',        name: 'Hungarian Grand Prix',       circuit: 'Hungaroring',                   country: 'Hungary',      location: 'Budapest' },
-  { round: 15, id: 'netherlands',    name: 'Dutch Grand Prix',           circuit: 'Circuit Zandvoort',             country: 'Netherlands',  location: 'Zandvoort' },
-  { round: 16, id: 'monza',          name: 'Italian Grand Prix',         circuit: 'Autodromo Nazionale Monza',     country: 'Italy',        location: 'Monza' },
-  { round: 17, id: 'azerbaijan',     name: 'Azerbaijan Grand Prix',      circuit: 'Baku City Circuit',             country: 'Azerbaijan',   location: 'Baku' },
-  { round: 18, id: 'singapore',      name: 'Singapore Grand Prix',       circuit: 'Marina Bay Street Circuit',     country: 'Singapore',    location: 'Singapore' },
-  { round: 19, id: 'usa',            name: 'United States Grand Prix',   circuit: 'Circuit of the Americas',       country: 'USA',          location: 'Austin' },
-  { round: 20, id: 'mexico',         name: 'Mexico City Grand Prix',     circuit: 'Autodromo Hermanos Rodriguez',  country: 'Mexico',       location: 'Mexico City' },
-  { round: 21, id: 'brazil',         name: 'Sao Paulo Grand Prix',       circuit: 'Autodromo Jose Carlos Pace',    country: 'Brazil',       location: 'Interlagos' },
-  { round: 22, id: 'las_vegas',      name: 'Las Vegas Grand Prix',       circuit: 'Las Vegas Strip Circuit',       country: 'USA',          location: 'Las Vegas' },
-  { round: 23, id: 'qatar',          name: 'Qatar Grand Prix',           circuit: 'Lusail International Circuit',  country: 'Qatar',        location: 'Lusail' },
-  { round: 24, id: 'abu_dhabi',      name: 'Abu Dhabi Grand Prix',       circuit: 'Yas Marina Circuit',            country: 'UAE',          location: 'Yas Island' },
-]
+export const DEFAULT_CALENDARS_BY_YEAR = {
+  2025: [
+    { round: 1,  id: 'australia',    name: 'Australian Grand Prix',      circuit: 'Albert Park Circuit',            country: 'Australia',      location: 'Melbourne' },
+    { round: 2,  id: 'china',        name: 'Chinese Grand Prix',         circuit: 'Shanghai International Circuit', country: 'China',          location: 'Shanghai' },
+    { round: 3,  id: 'japan',        name: 'Japanese Grand Prix',        circuit: 'Suzuka International Racing',    country: 'Japan',          location: 'Suzuka' },
+    { round: 4,  id: 'bahrain',      name: 'Bahrain Grand Prix',         circuit: 'Bahrain International Circuit',  country: 'Bahrain',        location: 'Sakhir' },
+    { round: 5,  id: 'saudi_arabia', name: 'Saudi Arabian Grand Prix',   circuit: 'Jeddah Corniche Circuit',        country: 'Saudi Arabia',   location: 'Jeddah' },
+    { round: 6,  id: 'miami',        name: 'Miami Grand Prix',           circuit: 'Miami International Autodrome',  country: 'United States',  location: 'Miami Gardens' },
+    { round: 7,  id: 'imola',        name: 'Emilia Romagna Grand Prix',  circuit: 'Autodromo Enzo e Dino Ferrari',  country: 'Italy',          location: 'Imola' },
+    { round: 8,  id: 'monaco',       name: 'Monaco Grand Prix',          circuit: 'Circuit de Monaco',              country: 'Monaco',         location: 'Monte Carlo' },
+    { round: 9,  id: 'spain',        name: 'Spanish Grand Prix',         circuit: 'Circuit de Barcelona-Catalunya', country: 'Spain',          location: 'Barcelona' },
+    { round: 10, id: 'canada',       name: 'Canadian Grand Prix',        circuit: 'Circuit Gilles Villeneuve',      country: 'Canada',         location: 'Montréal' },
+    { round: 11, id: 'austria',      name: 'Austrian Grand Prix',        circuit: 'Red Bull Ring',                  country: 'Austria',        location: 'Spielberg' },
+    { round: 12, id: 'silverstone',  name: 'British Grand Prix',         circuit: 'Silverstone Circuit',            country: 'United Kingdom', location: 'Silverstone' },
+    { round: 13, id: 'spa',          name: 'Belgian Grand Prix',         circuit: 'Circuit de Spa-Francorchamps',   country: 'Belgium',        location: 'Spa-Francorchamps' },
+    { round: 14, id: 'hungary',      name: 'Hungarian Grand Prix',       circuit: 'Hungaroring',                    country: 'Hungary',        location: 'Budapest' },
+    { round: 15, id: 'netherlands',  name: 'Dutch Grand Prix',           circuit: 'Circuit Zandvoort',              country: 'Netherlands',    location: 'Zandvoort' },
+    { round: 16, id: 'monza',        name: 'Italian Grand Prix',         circuit: 'Autodromo Nazionale Monza',      country: 'Italy',          location: 'Monza' },
+    { round: 17, id: 'baku',         name: 'Azerbaijan Grand Prix',      circuit: 'Baku City Circuit',              country: 'Azerbaijan',     location: 'Baku' },
+    { round: 18, id: 'singapore',    name: 'Singapore Grand Prix',       circuit: 'Marina Bay Street Circuit',      country: 'Singapore',      location: 'Marina Bay' },
+    { round: 19, id: 'austin',       name: 'United States Grand Prix',   circuit: 'Circuit of The Americas',        country: 'United States',  location: 'Austin' },
+    { round: 20, id: 'mexico',       name: 'Mexico City Grand Prix',     circuit: 'Autódromo Hermanos Rodríguez',   country: 'Mexico',         location: 'Mexico City' },
+    { round: 21, id: 'brazil',       name: 'São Paulo Grand Prix',       circuit: 'Autódromo de Interlagos',        country: 'Brazil',         location: 'São Paulo' },
+    { round: 22, id: 'las_vegas',    name: 'Las Vegas Grand Prix',       circuit: 'Las Vegas Strip Circuit',        country: 'United States',  location: 'Las Vegas' },
+    { round: 23, id: 'qatar',        name: 'Qatar Grand Prix',           circuit: 'Lusail International Circuit',   country: 'Qatar',          location: 'Lusail' },
+    { round: 24, id: 'abu_dhabi',    name: 'Abu Dhabi Grand Prix',       circuit: 'Yas Marina Circuit',             country: 'UAE',            location: 'Yas Island' },
+  ],
+  2026: [
+    { round: 1,  id: 'australia',   name: 'Australian Grand Prix',          circuit: 'Albert Park Circuit',            country: 'Australia',      location: 'Melbourne' },
+    { round: 2,  id: 'china',       name: 'Chinese Grand Prix',             circuit: 'Shanghai International Circuit', country: 'China',          location: 'Shanghai' },
+    { round: 3,  id: 'japan',       name: 'Japanese Grand Prix',            circuit: 'Suzuka International Racing',    country: 'Japan',          location: 'Suzuka' },
+    { round: 4,  id: 'miami',       name: 'Miami Grand Prix',               circuit: 'Miami International Autodrome',  country: 'United States',  location: 'Miami Gardens' },
+    { round: 5,  id: 'canada',      name: 'Canadian Grand Prix',            circuit: 'Circuit Gilles Villeneuve',      country: 'Canada',         location: 'Montréal' },
+    { round: 6,  id: 'monaco',      name: 'Monaco Grand Prix',              circuit: 'Circuit de Monaco',              country: 'Monaco',         location: 'Monte Carlo' },
+    { round: 7,  id: 'barcelona',   name: 'Barcelona Grand Prix',           circuit: 'Circuit de Barcelona-Catalunya', country: 'Spain',          location: 'Barcelona' },
+    { round: 8,  id: 'austria',     name: 'Austrian Grand Prix',            circuit: 'Red Bull Ring',                  country: 'Austria',        location: 'Spielberg' },
+    { round: 9,  id: 'silverstone', name: 'British Grand Prix',             circuit: 'Silverstone Circuit',            country: 'United Kingdom', location: 'Silverstone' },
+    { round: 10, id: 'spa',         name: 'Belgian Grand Prix',             circuit: 'Circuit de Spa-Francorchamps',   country: 'Belgium',        location: 'Spa-Francorchamps' },
+    { round: 11, id: 'hungary',     name: 'Hungarian Grand Prix',           circuit: 'Hungaroring',                    country: 'Hungary',        location: 'Budapest' },
+    { round: 12, id: 'netherlands', name: 'Dutch Grand Prix',               circuit: 'Circuit Zandvoort',              country: 'Netherlands',    location: 'Zandvoort' },
+    { round: 13, id: 'monza',       name: 'Italian Grand Prix',             circuit: 'Autodromo Nazionale Monza',      country: 'Italy',          location: 'Monza' },
+    { round: 14, id: 'madrid',      name: 'Spanish Grand Prix',             circuit: 'Madring',                        country: 'Spain',          location: 'Madrid' },
+    { round: 15, id: 'baku',        name: 'Azerbaijan Grand Prix',          circuit: 'Baku City Circuit',              country: 'Azerbaijan',     location: 'Baku' },
+    { round: 16, id: 'malaysia',    name: 'Bahrain Grand Prix in Malaysia', circuit: 'Sepang International Circuit',   country: 'Malaysia',       location: 'Kuala Lumpur' },
+    { round: 17, id: 'singapore',   name: 'Singapore Grand Prix',           circuit: 'Marina Bay Street Circuit',      country: 'Singapore',      location: 'Marina Bay' },
+    { round: 18, id: 'austin',      name: 'United States Grand Prix',       circuit: 'Circuit of The Americas',        country: 'United States',  location: 'Austin' },
+    { round: 19, id: 'mexico',      name: 'Mexico City Grand Prix',         circuit: 'Autódromo Hermanos Rodríguez',   country: 'Mexico',         location: 'Mexico City' },
+    { round: 20, id: 'brazil',      name: 'São Paulo Grand Prix',           circuit: 'Autódromo de Interlagos',        country: 'Brazil',         location: 'São Paulo' },
+    { round: 21, id: 'las_vegas',   name: 'Las Vegas Grand Prix',           circuit: 'Las Vegas Strip Circuit',        country: 'United States',  location: 'Las Vegas' },
+    { round: 22, id: 'qatar',       name: 'Qatar Grand Prix',               circuit: 'Lusail International Circuit',   country: 'Qatar',          location: 'Lusail' },
+    { round: 23, id: 'abu_dhabi',   name: 'Abu Dhabi Grand Prix',           circuit: 'Yas Marina Circuit',             country: 'UAE',            location: 'Yas Island' },
+  ],
+}
 
 export const EV_CYCLES = [
   { id: 'nasa_b0005_sag',        name: 'NASA B0005',   tag: 'Capacity Fade / Sag',  pack: 'NASA Ames Prognostics', desc: '18650 Li-ion Cell #5 — Rapid Droop & Accelerated Resistance Growth' },
@@ -109,8 +163,8 @@ export default function App() {
   const [selectedEvent, setSelectedEvent]             = useState('monaco')
   const [selectedSessionType, setSelectedSessionType] = useState('Q')
   const [selectedDriver, setSelectedDriver]           = useState('44')
-  const [availableDrivers, setAvailableDrivers]       = useState(DEFAULT_DRIVERS_2025_2026)
-  const [availableEvents, setAvailableEvents]         = useState(DEFAULT_CALENDAR_2025)
+  const [availableDrivers, setAvailableDrivers]       = useState(DEFAULT_DRIVERS_BY_YEAR[2025])
+  const [availableEvents, setAvailableEvents]         = useState(DEFAULT_CALENDARS_BY_YEAR[2025])
 
   // EV Battery State
   const [selectedCycle, setSelectedCycle] = useState('nasa_b0005_sag')
@@ -145,45 +199,65 @@ export default function App() {
     return () => { cancelled = true }
   }, [])
 
-  // Fetch Drivers and Calendar dynamically when selectedYear changes
+  // Calendar follows the season; the driver list follows the exact session,
+  // because entry lists change mid-season (2025 Doohan→Colapinto, 2026
+  // Ocon→Camara) and car numbers move between years (NOR #1 in 2026).
   useEffect(() => {
     let isMounted = true
     const controller = new AbortController()
-    const fetchSeasonMetadata = async () => {
+    const fetchCalendar = async () => {
       try {
-        const [calRes, drvRes] = await Promise.all([
-          apiFetch(`/api/f1/calendar?year=${selectedYear}`, { timeoutMs: 5000, signal: controller.signal }),
-          apiFetch(`/api/f1/drivers?year=${selectedYear}`, { timeoutMs: 5000, signal: controller.signal }),
-        ])
-        const [calData, drvData] = await Promise.all([calRes.json(), drvRes.json()])
-        if (isMounted) {
-          if (calData.events?.length > 0) {
-            setAvailableEvents(calData.events)
-            setSelectedEvent(prev => calData.events.some(e => e.id === prev) ? prev : calData.events[0].id)
-          }
-          if (drvData.drivers?.length > 0) {
-            const mapped = drvData.drivers.map(d => ({
-              id: String(d.number),
-              number: String(d.number),
-              code: d.code,
-              name: d.name,
-              team: d.team,
-              color: d.color,
-            }))
-            setAvailableDrivers(mapped)
-            setSelectedDriver(prev => mapped.some(d => d.number === String(prev)) ? prev : String(mapped[0].number))
-          }
+        const res = await apiFetch(`/api/f1/calendar?year=${selectedYear}`, { timeoutMs: 5000, signal: controller.signal })
+        const calData = await res.json()
+        if (isMounted && calData.events?.length > 0) {
+          setAvailableEvents(calData.events)
+          setSelectedEvent(prev => calData.events.some(e => e.id === prev) ? prev : calData.events[0].id)
         }
       } catch {
         if (isMounted && !controller.signal.aborted) {
-          setAvailableDrivers(DEFAULT_DRIVERS_2025_2026)
-          setAvailableEvents(DEFAULT_CALENDAR_2025)
+          const fallback = DEFAULT_CALENDARS_BY_YEAR[selectedYear] || DEFAULT_CALENDARS_BY_YEAR[2025]
+          setAvailableEvents(fallback)
+          setSelectedEvent(prev => fallback.some(e => e.id === prev) ? prev : fallback[0].id)
         }
       }
     }
-    fetchSeasonMetadata()
+    fetchCalendar()
     return () => { isMounted = false; controller.abort() }
   }, [selectedYear])
+
+  useEffect(() => {
+    let isMounted = true
+    const controller = new AbortController()
+    const applyDrivers = (drivers) => {
+      setAvailableDrivers(drivers)
+      setSelectedDriver(prev => drivers.some(d => d.number === String(prev)) ? prev : String(drivers[0].number))
+    }
+    const fetchDrivers = async () => {
+      try {
+        const res = await apiFetch(
+          `/api/f1/drivers?year=${selectedYear}&event=${selectedEvent}&session_type=${selectedSessionType}`,
+          { timeoutMs: 5000, signal: controller.signal },
+        )
+        const drvData = await res.json()
+        if (isMounted && drvData.drivers?.length > 0) {
+          applyDrivers(drvData.drivers.map(d => ({
+            id: String(d.number),
+            number: String(d.number),
+            code: d.code,
+            name: d.name,
+            team: d.team,
+            color: d.color,
+          })))
+        }
+      } catch {
+        if (isMounted && !controller.signal.aborted) {
+          applyDrivers(DEFAULT_DRIVERS_BY_YEAR[selectedYear] || DEFAULT_DRIVERS_BY_YEAR[2025])
+        }
+      }
+    }
+    fetchDrivers()
+    return () => { isMounted = false; controller.abort() }
+  }, [selectedYear, selectedEvent, selectedSessionType])
 
   // Reset diagnostic data on parameter change
   useEffect(() => {

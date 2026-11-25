@@ -11,29 +11,58 @@ import math
 import numpy as np
 from typing import Dict, List, Optional, Any
 
-# ─── 2025 & 2026 Official Driver Rosters ──────────────────────────────────────
+# ─── Driver Rosters ───────────────────────────────────────────────────────────
+# Final 2025 grid (Abu Dhabi, OpenF1 session 9981) and current 2026 grid
+# (Las Vegas, OpenF1 session 11420). Numbers, teams and colours are the
+# values OpenF1 reports for those sessions; mid-season swaps are captured by
+# /api/f1/drivers, which resolves the real entry list per session.
 
-DRIVERS_2025_2026 = [
-    {"number": "1",  "code": "VER", "name": "Max Verstappen",        "team": "Red Bull Racing", "color": "#3671C6"},
-    {"number": "30", "code": "LAW", "name": "Liam Lawson",           "team": "Red Bull Racing", "color": "#3671C6"},
-    {"number": "4",  "code": "NOR", "name": "Lando Norris",           "team": "McLaren",         "color": "#FF8000"},
-    {"number": "81", "code": "PIA", "name": "Oscar Piastri",         "team": "McLaren",         "color": "#FF8000"},
-    {"number": "16", "code": "LEC", "name": "Charles Leclerc",       "team": "Ferrari",         "color": "#E80020"},
-    {"number": "44", "code": "HAM", "name": "Lewis Hamilton",        "team": "Ferrari",         "color": "#E80020"},
-    {"number": "63", "code": "RUS", "name": "George Russell",        "team": "Mercedes-AMG",    "color": "#27F4D2"},
-    {"number": "12", "code": "ANT", "name": "Andrea Kimi Antonelli", "team": "Mercedes-AMG",    "color": "#27F4D2"},
+DRIVERS_2025 = [
+    {"number": "1",  "code": "VER", "name": "Max Verstappen",        "team": "Red Bull Racing", "color": "#4781D7"},
+    {"number": "22", "code": "TSU", "name": "Yuki Tsunoda",          "team": "Red Bull Racing", "color": "#4781D7"},
+    {"number": "4",  "code": "NOR", "name": "Lando Norris",          "team": "McLaren",         "color": "#F47600"},
+    {"number": "81", "code": "PIA", "name": "Oscar Piastri",         "team": "McLaren",         "color": "#F47600"},
+    {"number": "16", "code": "LEC", "name": "Charles Leclerc",       "team": "Ferrari",         "color": "#ED1131"},
+    {"number": "44", "code": "HAM", "name": "Lewis Hamilton",        "team": "Ferrari",         "color": "#ED1131"},
+    {"number": "63", "code": "RUS", "name": "George Russell",        "team": "Mercedes",        "color": "#00D7B6"},
+    {"number": "12", "code": "ANT", "name": "Kimi Antonelli",        "team": "Mercedes",        "color": "#00D7B6"},
     {"number": "14", "code": "ALO", "name": "Fernando Alonso",       "team": "Aston Martin",    "color": "#229971"},
     {"number": "18", "code": "STR", "name": "Lance Stroll",          "team": "Aston Martin",    "color": "#229971"},
-    {"number": "55", "code": "SAI", "name": "Carlos Sainz",          "team": "Williams",        "color": "#64C4FF"},
-    {"number": "23", "code": "ALB", "name": "Alexander Albon",       "team": "Williams",        "color": "#64C4FF"},
-    {"number": "10", "code": "GAS", "name": "Pierre Gasly",          "team": "Alpine",          "color": "#0093CC"},
-    {"number": "7",  "code": "DOO", "name": "Jack Doohan",           "team": "Alpine",          "color": "#0093CC"},
-    {"number": "31", "code": "OCO", "name": "Esteban Ocon",          "team": "Haas F1 Team",    "color": "#B6BABD"},
-    {"number": "87", "code": "BEA", "name": "Oliver Bearman",        "team": "Haas F1 Team",    "color": "#B6BABD"},
-    {"number": "27", "code": "HUL", "name": "Nico Hülkenberg",       "team": "Sauber / Audi",   "color": "#52E252"},
-    {"number": "5",  "code": "BOR", "name": "Gabriel Bortoleto",     "team": "Sauber / Audi",   "color": "#52E252"},
-    {"number": "22", "code": "TSU", "name": "Yuki Tsunoda",          "team": "RB F1 Team",      "color": "#6692FF"},
-    {"number": "6",  "code": "HAD", "name": "Isack Hadjar",          "team": "RB F1 Team",      "color": "#6692FF"},
+    {"number": "55", "code": "SAI", "name": "Carlos Sainz",          "team": "Williams",        "color": "#1868DB"},
+    {"number": "23", "code": "ALB", "name": "Alexander Albon",       "team": "Williams",        "color": "#1868DB"},
+    {"number": "10", "code": "GAS", "name": "Pierre Gasly",          "team": "Alpine",          "color": "#00A1E8"},
+    {"number": "43", "code": "COL", "name": "Franco Colapinto",      "team": "Alpine",          "color": "#00A1E8"},
+    {"number": "31", "code": "OCO", "name": "Esteban Ocon",          "team": "Haas F1 Team",    "color": "#9C9FA2"},
+    {"number": "87", "code": "BEA", "name": "Oliver Bearman",        "team": "Haas F1 Team",    "color": "#9C9FA2"},
+    {"number": "27", "code": "HUL", "name": "Nico Hülkenberg",       "team": "Kick Sauber",     "color": "#01C00E"},
+    {"number": "5",  "code": "BOR", "name": "Gabriel Bortoleto",     "team": "Kick Sauber",     "color": "#01C00E"},
+    {"number": "30", "code": "LAW", "name": "Liam Lawson",           "team": "Racing Bulls",    "color": "#6C98FF"},
+    {"number": "6",  "code": "HAD", "name": "Isack Hadjar",          "team": "Racing Bulls",    "color": "#6C98FF"},
+]
+
+DRIVERS_2026 = [
+    {"number": "1",  "code": "NOR", "name": "Lando Norris",          "team": "McLaren",         "color": "#F47600"},
+    {"number": "81", "code": "PIA", "name": "Oscar Piastri",         "team": "McLaren",         "color": "#F47600"},
+    {"number": "16", "code": "LEC", "name": "Charles Leclerc",       "team": "Ferrari",         "color": "#ED1131"},
+    {"number": "44", "code": "HAM", "name": "Lewis Hamilton",        "team": "Ferrari",         "color": "#ED1131"},
+    {"number": "63", "code": "RUS", "name": "George Russell",        "team": "Mercedes",        "color": "#00D7B6"},
+    {"number": "12", "code": "ANT", "name": "Kimi Antonelli",        "team": "Mercedes",        "color": "#00D7B6"},
+    {"number": "3",  "code": "VER", "name": "Max Verstappen",        "team": "Red Bull Racing", "color": "#4781D7"},
+    {"number": "6",  "code": "HAD", "name": "Isack Hadjar",          "team": "Red Bull Racing", "color": "#4781D7"},
+    {"number": "30", "code": "LAW", "name": "Liam Lawson",           "team": "Racing Bulls",    "color": "#6C98FF"},
+    {"number": "41", "code": "LIN", "name": "Arvid Lindblad",        "team": "Racing Bulls",    "color": "#6C98FF"},
+    {"number": "14", "code": "ALO", "name": "Fernando Alonso",       "team": "Aston Martin",    "color": "#229971"},
+    {"number": "18", "code": "STR", "name": "Lance Stroll",          "team": "Aston Martin",    "color": "#229971"},
+    {"number": "55", "code": "SAI", "name": "Carlos Sainz",          "team": "Williams",        "color": "#1868DB"},
+    {"number": "23", "code": "ALB", "name": "Alexander Albon",       "team": "Williams",        "color": "#1868DB"},
+    {"number": "10", "code": "GAS", "name": "Pierre Gasly",          "team": "Alpine",          "color": "#00A1E8"},
+    {"number": "43", "code": "COL", "name": "Franco Colapinto",      "team": "Alpine",          "color": "#00A1E8"},
+    {"number": "27", "code": "HUL", "name": "Nico Hülkenberg",       "team": "Audi",            "color": "#F50537"},
+    {"number": "5",  "code": "BOR", "name": "Gabriel Bortoleto",     "team": "Audi",            "color": "#F50537"},
+    {"number": "11", "code": "PER", "name": "Sergio Pérez",          "team": "Cadillac",        "color": "#909090"},
+    {"number": "77", "code": "BOT", "name": "Valtteri Bottas",       "team": "Cadillac",        "color": "#909090"},
+    {"number": "51", "code": "CAM", "name": "Rafael Camara",         "team": "Haas F1 Team",    "color": "#9C9FA2"},
+    {"number": "87", "code": "BEA", "name": "Oliver Bearman",        "team": "Haas F1 Team",    "color": "#9C9FA2"},
 ]
 
 # ─── 2025 FIA Official Formula 1 World Championship Calendar ───────────────────
@@ -65,32 +94,36 @@ CALENDAR_2025 = [
     {"round": 24, "id": "abu_dhabi",   "name": "Abu Dhabi Grand Prix",      "circuit": "Yas Marina Circuit",            "country": "UAE",            "location": "Yas Island",        "lap_len": 5.281, "ref_time": 82.2, "corners": 16},
 ]
 
-# ─── 2026 FIA Official Formula 1 World Championship Calendar ───────────────────
+# ─── 2026 FIA Formula 1 World Championship Calendar ────────────────────────────
+# Rounds 4 (Sakhir) and 5 (Jeddah) were cancelled; the Gulf Air Bahrain Grand
+# Prix relocated to Sepang in October, leaving 23 rounds. Venue list measured
+# from OpenF1 meetings (2026-11-25). Madrid and Sepang ref_times are the fastest
+# 2026 qualifying laps measured from OpenF1 laps.
 
 CALENDAR_2026 = [
-    {"round": 1,  "id": "australia",    "name": "Australian Grand Prix",     "circuit": "Albert Park Circuit",           "country": "Australia",      "location": "Melbourne",         "lap_len": 5.278, "ref_time": 75.9, "corners": 14},
-    {"round": 2,  "id": "china",        "name": "Chinese Grand Prix",        "circuit": "Shanghai International Circuit", "country": "China",          "location": "Shanghai",          "lap_len": 5.451, "ref_time": 93.1, "corners": 16},
-    {"round": 3,  "id": "japan",        "name": "Japanese Grand Prix",       "circuit": "Suzuka International Racing",   "country": "Japan",          "location": "Suzuka",            "lap_len": 5.807, "ref_time": 87.6, "corners": 18},
-    {"round": 4,  "id": "miami",        "name": "Miami Grand Prix",          "circuit": "Miami International Autodrome",  "country": "United States",  "location": "Miami Gardens",     "lap_len": 5.412, "ref_time": 86.8, "corners": 19},
-    {"round": 5,  "id": "canada",       "name": "Canadian Grand Prix",       "circuit": "Circuit Gilles Villeneuve",     "country": "Canada",         "location": "Montréal",          "lap_len": 4.361, "ref_time": 71.5, "corners": 14},
-    {"round": 6,  "id": "monaco",       "name": "Monaco Grand Prix",         "circuit": "Circuit de Monaco",             "country": "Monaco",         "location": "Monte Carlo",       "lap_len": 3.337, "ref_time": 70.9, "corners": 19},
-    {"round": 7,  "id": "spain",        "name": "Spanish Grand Prix",        "circuit": "Circuit de Barcelona-Catalunya", "country": "Spain",          "location": "Barcelona",         "lap_len": 4.657, "ref_time": 71.8, "corners": 14},
-    {"round": 8,  "id": "austria",      "name": "Austrian Grand Prix",       "circuit": "Red Bull Ring",                 "country": "Austria",        "location": "Spielberg",         "lap_len": 4.318, "ref_time": 63.9, "corners": 10},
-    {"round": 9,  "id": "silverstone",  "name": "British Grand Prix",        "circuit": "Silverstone Circuit",           "country": "United Kingdom", "location": "Silverstone",       "lap_len": 5.891, "ref_time": 85.2, "corners": 18},
-    {"round": 10, "id": "spa",          "name": "Belgian Grand Prix",        "circuit": "Circuit de Spa-Francorchamps",  "country": "Belgium",        "location": "Spa-Francorchamps", "lap_len": 7.004, "ref_time": 102.6,"corners": 19},
-    {"round": 11, "id": "hungary",      "name": "Hungarian Grand Prix",      "circuit": "Hungaroring",                   "country": "Hungary",        "location": "Budapest",          "lap_len": 4.381, "ref_time": 74.8, "corners": 14},
-    {"round": 12, "id": "netherlands",  "name": "Dutch Grand Prix",          "circuit": "Circuit Zandvoort",             "country": "Netherlands",    "location": "Zandvoort",         "lap_len": 4.259, "ref_time": 69.1, "corners": 14},
-    {"round": 13, "id": "monza",        "name": "Italian Grand Prix",        "circuit": "Autodromo Nazionale Monza",     "country": "Italy",          "location": "Monza",             "lap_len": 5.793, "ref_time": 78.9, "corners": 11},
-    {"round": 14, "id": "baku",         "name": "Azerbaijan Grand Prix",     "circuit": "Baku City Circuit",             "country": "Azerbaijan",     "location": "Baku",              "lap_len": 6.003, "ref_time": 99.8, "corners": 20},
-    {"round": 15, "id": "singapore",    "name": "Singapore Grand Prix",      "circuit": "Marina Bay Street Circuit",     "country": "Singapore",      "location": "Marina Bay",        "lap_len": 4.940, "ref_time": 88.9, "corners": 19},
-    {"round": 16, "id": "austin",       "name": "United States Grand Prix",  "circuit": "Circuit of The Americas",       "country": "United States",  "location": "Austin",            "lap_len": 5.513, "ref_time": 92.1, "corners": 20},
-    {"round": 17, "id": "mexico",       "name": "Mexico City Grand Prix",    "circuit": "Autódromo Hermanos Rodríguez",  "country": "Mexico",         "location": "Mexico City",       "lap_len": 4.304, "ref_time": 76.5, "corners": 17},
-    {"round": 18, "id": "brazil",       "name": "São Paulo Grand Prix",      "circuit": "Autódromo de Interlagos",       "country": "Brazil",         "location": "São Paulo",         "lap_len": 4.309, "ref_time": 69.2, "corners": 15},
-    {"round": 19, "id": "las_vegas",   "name": "Las Vegas Grand Prix",      "circuit": "Las Vegas Strip Circuit",       "country": "United States",  "location": "Las Vegas",         "lap_len": 6.201, "ref_time": 91.9, "corners": 17},
-    {"round": 20, "id": "qatar",       "name": "Qatar Grand Prix",          "circuit": "Lusail International Circuit",  "country": "Qatar",          "location": "Lusail",            "lap_len": 5.419, "ref_time": 79.9, "corners": 16},
-    {"round": 21, "id": "abu_dhabi",   "name": "Abu Dhabi Grand Prix",      "circuit": "Yas Marina Circuit",            "country": "UAE",            "location": "Yas Island",        "lap_len": 5.281, "ref_time": 81.6, "corners": 16},
-    {"round": 22, "id": "bahrain",      "name": "Bahrain Grand Prix",        "circuit": "Bahrain International Circuit",  "country": "Bahrain",        "location": "Sakhir",            "lap_len": 5.412, "ref_time": 88.5, "corners": 15},
-    {"round": 23, "id": "saudi_arabia", "name": "Saudi Arabian Grand Prix",  "circuit": "Jeddah Corniche Circuit",       "country": "Saudi Arabia",   "location": "Jeddah",            "lap_len": 6.174, "ref_time": 86.9, "corners": 27},
+    {"round": 1,  "id": "australia",    "name": "Australian Grand Prix",         "circuit": "Albert Park Circuit",           "country": "Australia",      "location": "Melbourne",         "lap_len": 5.278, "ref_time": 75.9, "corners": 14},
+    {"round": 2,  "id": "china",        "name": "Chinese Grand Prix",            "circuit": "Shanghai International Circuit", "country": "China",          "location": "Shanghai",          "lap_len": 5.451, "ref_time": 93.1, "corners": 16},
+    {"round": 3,  "id": "japan",        "name": "Japanese Grand Prix",           "circuit": "Suzuka International Racing",   "country": "Japan",          "location": "Suzuka",            "lap_len": 5.807, "ref_time": 87.6, "corners": 18},
+    {"round": 4,  "id": "miami",        "name": "Miami Grand Prix",              "circuit": "Miami International Autodrome",  "country": "United States",  "location": "Miami Gardens",     "lap_len": 5.412, "ref_time": 86.8, "corners": 19},
+    {"round": 5,  "id": "canada",       "name": "Canadian Grand Prix",           "circuit": "Circuit Gilles Villeneuve",     "country": "Canada",         "location": "Montréal",          "lap_len": 4.361, "ref_time": 71.5, "corners": 14},
+    {"round": 6,  "id": "monaco",       "name": "Monaco Grand Prix",             "circuit": "Circuit de Monaco",             "country": "Monaco",         "location": "Monte Carlo",       "lap_len": 3.337, "ref_time": 70.9, "corners": 19},
+    {"round": 7,  "id": "barcelona",    "name": "Barcelona Grand Prix",          "circuit": "Circuit de Barcelona-Catalunya", "country": "Spain",          "location": "Barcelona",         "lap_len": 4.657, "ref_time": 71.8, "corners": 14},
+    {"round": 8,  "id": "austria",      "name": "Austrian Grand Prix",           "circuit": "Red Bull Ring",                 "country": "Austria",        "location": "Spielberg",         "lap_len": 4.318, "ref_time": 63.9, "corners": 10},
+    {"round": 9,  "id": "silverstone",  "name": "British Grand Prix",            "circuit": "Silverstone Circuit",           "country": "United Kingdom", "location": "Silverstone",       "lap_len": 5.891, "ref_time": 85.2, "corners": 18},
+    {"round": 10, "id": "spa",          "name": "Belgian Grand Prix",            "circuit": "Circuit de Spa-Francorchamps",  "country": "Belgium",        "location": "Spa-Francorchamps", "lap_len": 7.004, "ref_time": 102.6,"corners": 19},
+    {"round": 11, "id": "hungary",      "name": "Hungarian Grand Prix",          "circuit": "Hungaroring",                   "country": "Hungary",        "location": "Budapest",          "lap_len": 4.381, "ref_time": 74.8, "corners": 14},
+    {"round": 12, "id": "netherlands",  "name": "Dutch Grand Prix",              "circuit": "Circuit Zandvoort",             "country": "Netherlands",    "location": "Zandvoort",         "lap_len": 4.259, "ref_time": 69.1, "corners": 14},
+    {"round": 13, "id": "monza",        "name": "Italian Grand Prix",            "circuit": "Autodromo Nazionale Monza",     "country": "Italy",          "location": "Monza",             "lap_len": 5.793, "ref_time": 78.9, "corners": 11},
+    {"round": 14, "id": "madrid",       "name": "Spanish Grand Prix",            "circuit": "Madring",                       "country": "Spain",          "location": "Madrid",            "lap_len": 5.474, "ref_time": 91.8, "corners": 20},
+    {"round": 15, "id": "baku",         "name": "Azerbaijan Grand Prix",         "circuit": "Baku City Circuit",             "country": "Azerbaijan",     "location": "Baku",              "lap_len": 6.003, "ref_time": 99.8, "corners": 20},
+    {"round": 16, "id": "malaysia",     "name": "Bahrain Grand Prix in Malaysia","circuit": "Sepang International Circuit",  "country": "Malaysia",       "location": "Kuala Lumpur",      "lap_len": 5.543, "ref_time": 95.1, "corners": 15},
+    {"round": 17, "id": "singapore",    "name": "Singapore Grand Prix",          "circuit": "Marina Bay Street Circuit",     "country": "Singapore",      "location": "Marina Bay",        "lap_len": 4.940, "ref_time": 88.9, "corners": 19},
+    {"round": 18, "id": "austin",       "name": "United States Grand Prix",      "circuit": "Circuit of The Americas",       "country": "United States",  "location": "Austin",            "lap_len": 5.513, "ref_time": 92.1, "corners": 20},
+    {"round": 19, "id": "mexico",       "name": "Mexico City Grand Prix",        "circuit": "Autódromo Hermanos Rodríguez",  "country": "Mexico",         "location": "Mexico City",       "lap_len": 4.304, "ref_time": 76.5, "corners": 17},
+    {"round": 20, "id": "brazil",       "name": "São Paulo Grand Prix",          "circuit": "Autódromo de Interlagos",       "country": "Brazil",         "location": "São Paulo",         "lap_len": 4.309, "ref_time": 69.2, "corners": 15},
+    {"round": 21, "id": "las_vegas",    "name": "Las Vegas Grand Prix",          "circuit": "Las Vegas Strip Circuit",       "country": "United States",  "location": "Las Vegas",         "lap_len": 6.201, "ref_time": 91.9, "corners": 17},
+    {"round": 22, "id": "qatar",        "name": "Qatar Grand Prix",              "circuit": "Lusail International Circuit",  "country": "Qatar",          "location": "Lusail",            "lap_len": 5.419, "ref_time": 79.9, "corners": 16},
+    {"round": 23, "id": "abu_dhabi",    "name": "Abu Dhabi Grand Prix",          "circuit": "Yas Marina Circuit",            "country": "UAE",            "location": "Yas Island",        "lap_len": 5.281, "ref_time": 81.6, "corners": 16},
 ]
 
 # ─── Geometric Circuit Coordinates for Dynamic Track Maps ─────────────────────
@@ -117,9 +150,9 @@ def get_season_calendar(year: int) -> List[Dict[str, Any]]:
     return CALENDAR_2026 if year == 2026 else CALENDAR_2025
 
 def get_season_drivers(year: int) -> List[Dict[str, Any]]:
-    """Returns official driver lineup with car numbers and team liveries."""
+    """Returns the season's final/current entry list with car numbers and liveries."""
     _require_supported(year)
-    return DRIVERS_2025_2026
+    return DRIVERS_2026 if year == 2026 else DRIVERS_2025
 
 def get_event_meta(year: int, event_identifier: str) -> Dict[str, Any]:
     """Finds Grand Prix metadata by ID, alias, or name substring."""
@@ -157,8 +190,13 @@ def get_event_meta(year: int, event_identifier: str) -> Dict[str, Any]:
         "shanghai": "china",
         "budapest": "hungary",
         "hungaroring": "hungary",
-        "barcelona": "spain",
-        "catalunya": "spain",
+        "barcelona": "barcelona",
+        "catalunya": "barcelona",
+        "malaysia": "malaysia",
+        "sepang": "malaysia",
+        "kuala_lumpur": "malaysia",
+        "madrid": "madrid",
+        "madring": "madrid",
         "mexico_city": "mexico",
         "vegas": "las_vegas",
         "lusail": "qatar",
@@ -168,6 +206,12 @@ def get_event_meta(year: int, event_identifier: str) -> Dict[str, Any]:
         target_id = alias_map[clean_id]
         for ev in cal:
             if ev["id"] == target_id:
+                return ev
+
+    # 2025 calls the Barcelona round "spain"; the 2026 calendar renames it.
+    if clean_id in ("barcelona", "catalunya"):
+        for ev in cal:
+            if ev["id"] == "spain":
                 return ev
 
     # 3. Substring match
@@ -192,6 +236,9 @@ CIRCUIT_SECTOR_RATIOS: Dict[str, tuple] = {
     "miami":        (0.34, 0.35, 0.31),
     "imola":        (0.36, 0.34, 0.30),
     "spain":        (0.33, 0.37, 0.30),
+    "barcelona":    (0.33, 0.37, 0.30),
+    "madrid":       (0.31, 0.36, 0.33),
+    "malaysia":     (0.26, 0.33, 0.41),
     "canada":       (0.34, 0.35, 0.31),
     "austria":      (0.34, 0.33, 0.33),
     "hungary":      (0.37, 0.35, 0.28),
@@ -354,7 +401,7 @@ def generate_f1_session_telemetry(
     delta_offset = 0.0
     if driver_obj["team"] in ["Red Bull Racing", "McLaren", "Ferrari"]:
         delta_offset = -0.4
-    elif driver_obj["team"] in ["Mercedes-AMG", "Aston Martin"]:
+    elif driver_obj["team"] in ["Mercedes", "Aston Martin"]:
         delta_offset = 0.2
     else:
         delta_offset = 0.8

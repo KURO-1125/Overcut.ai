@@ -535,6 +535,61 @@ CIRCUIT_TEMPLATES: Dict[str, Dict[str, Any]] = {
             (190, 350), (220, 280), (240, 200), (230, 130), (190, 70),  (130, 60),
             (80, 100),  (70, 170),  (90, 240),  (120, 290), (150, 330)
         ]
+    },
+
+    # ── Madrid (Madring) & Sepang ─────────────────────────────────────────────
+    # No GPS-verified centreline is published for these two 2026 venues, so the
+    # layout is a stylised loop used only by the synthetic generator. Real
+    # OpenF1 runs draw the actual GPS trace and drop these corner pins.
+    "madrid": {
+        "name": "Madring",
+        "location": "Madrid, Spain",
+        "lap_len": "5.474 km",
+        "synthetic_layout": True,
+        "corners": [
+            {"num": 1,  "name": "Turn 1",  "ratio": 0.06, "speed": 120, "desc": "Heavy Braking Right"},
+            {"num": 3,  "name": "Turn 3",  "ratio": 0.14, "speed": 95,  "desc": "Tight Left"},
+            {"num": 5,  "name": "Turn 5",  "ratio": 0.22, "speed": 150, "desc": "Medium Right"},
+            {"num": 7,  "name": "Turn 7",  "ratio": 0.31, "speed": 105, "desc": "Braking Hairpin"},
+            {"num": 9,  "name": "Turn 9",  "ratio": 0.40, "speed": 175, "desc": "Fast Sweep"},
+            {"num": 11, "name": "Turn 11", "ratio": 0.49, "speed": 90,  "desc": "Slow Left"},
+            {"num": 13, "name": "Turn 13", "ratio": 0.58, "speed": 160, "desc": "Changing Direction"},
+            {"num": 15, "name": "Turn 15", "ratio": 0.67, "speed": 110, "desc": "Braking Zone"},
+            {"num": 17, "name": "Turn 17", "ratio": 0.77, "speed": 145, "desc": "High-Speed Right"},
+            {"num": 19, "name": "Turn 19", "ratio": 0.87, "speed": 85,  "desc": "Tight Final Complex"},
+        ],
+        "coords": [
+            (120, 45),  (180, 40),  (230, 60),  (255, 100), (240, 145), (200, 165),
+            (170, 195), (150, 230), (165, 265), (205, 285), (240, 310), (215, 345),
+            (165, 350), (125, 325), (100, 290), (85, 250),  (70, 210),  (80, 170),
+            (105, 135), (95, 95),   (100, 65)
+        ]
+    },
+    "malaysia": {
+        "name": "Sepang International Circuit",
+        "location": "Kuala Lumpur, Malaysia",
+        "lap_len": "5.543 km",
+        "synthetic_layout": True,
+        "corners": [
+            {"num": 1,  "name": "Turn 1",  "ratio": 0.07, "speed": 90,  "desc": "Long Straight Braking"},
+            {"num": 2,  "name": "Turn 2",  "ratio": 0.13, "speed": 130, "desc": "Opening Right"},
+            {"num": 4,  "name": "Turn 4",  "ratio": 0.22, "speed": 145, "desc": "Fast Left"},
+            {"num": 5,  "name": "Turn 5",  "ratio": 0.30, "speed": 100, "desc": "Braking Right"},
+            {"num": 6,  "name": "Turn 6",  "ratio": 0.37, "speed": 120, "desc": "Medium Left"},
+            {"num": 8,  "name": "Turn 8",  "ratio": 0.45, "speed": 160, "desc": "Fast Sweep"},
+            {"num": 9,  "name": "Turn 9",  "ratio": 0.53, "speed": 95,  "desc": "Hairpin Right"},
+            {"num": 11, "name": "Turn 11", "ratio": 0.62, "speed": 140, "desc": "Long Left"},
+            {"num": 12, "name": "Turn 12", "ratio": 0.70, "speed": 110, "desc": "Braking Right"},
+            {"num": 13, "name": "Turn 13", "ratio": 0.78, "speed": 135, "desc": "Quick Left"},
+            {"num": 14, "name": "Turn 14", "ratio": 0.86, "speed": 155, "desc": "Fast Right"},
+            {"num": 15, "name": "Turn 15", "ratio": 0.94, "speed": 120, "desc": "Final Hairpin"},
+        ],
+        "coords": [
+            (110, 50),  (200, 45),  (250, 70),  (255, 110), (225, 140), (185, 150),
+            (150, 140), (115, 155), (85, 185),  (80, 225),  (105, 255), (150, 265),
+            (190, 255), (225, 265), (250, 295), (235, 330), (195, 345), (145, 340),
+            (105, 315), (85, 280)
+        ]
     }
 }
 
@@ -641,6 +696,11 @@ ALIAS_TO_ACCURATE_KEY = {
     "belgium": "spa",
     "italian": "monza",
     "italy": "monza",
+    "madrid": "madrid",
+    "madring": "madrid",
+    "malaysia": "malaysia",
+    "sepang": "malaysia",
+    "kuala_lumpur": "malaysia",
 }
 
 def resolve_circuit_key(identifier: str) -> str:
@@ -662,6 +722,27 @@ def resolve_circuit_key(identifier: str) -> str:
             return k
     return "monaco"
 
+def _template_corner_pins(tmpl: Dict[str, Any], points: List[Dict[str, Any]], lap_time: float) -> List[Dict[str, Any]]:
+    """Builds timing windows and positions for a templated (non-GPS) layout."""
+    pins: List[Dict[str, Any]] = []
+    if not points:
+        return pins
+    n = len(points)
+    for corner in tmpl.get("corners", []):
+        ratio = float(corner.get("ratio", 0.0))
+        mid = ratio * lap_time
+        idx = min(n - 1, max(0, int(round(ratio * (n - 1)))))
+        pins.append({
+            "id": f"T{corner.get('num', idx)}",
+            "name": corner.get("name", f"Turn {corner.get('num', idx)}"),
+            "x": points[idx]["x"],
+            "y": points[idx]["y"],
+            "start": round(max(0.0, mid - 2.0), 1),
+            "end": round(mid + 2.0, 1),
+        })
+    return pins
+
+
 def generate_track_geometry(circuit_id: str, lap_time: float) -> Dict[str, Any]:
     """
     Generates high-precision normalized SVG track geometry with:
@@ -672,8 +753,10 @@ def generate_track_geometry(circuit_id: str, lap_time: float) -> Dict[str, Any]:
     """
     target_key = resolve_circuit_key(circuit_id)
     raw_track = ACCURATE_CIRCUITS.get(target_key)
-    
-    if not raw_track:
+
+    # Only fall back to Monaco when the circuit has neither GPS geometry nor a
+    # template; templated venues (Madrid, Sepang) must not wear Monaco's shape.
+    if not raw_track and target_key not in CIRCUIT_TEMPLATES:
         raw_track = ACCURATE_CIRCUITS.get("monaco")
 
     if not raw_track:
@@ -693,10 +776,12 @@ def generate_track_geometry(circuit_id: str, lap_time: float) -> Dict[str, Any]:
             "viewBox": "0 0 320 380",
             "svg_path": " ".join(svg_parts),
             "points": track_points,
-            "corner_pins": [],
+            "corner_pins": _template_corner_pins(tmpl, track_points, lap_time),
             "circuit_name": tmpl["name"],
             "location": tmpl["location"],
             "lap_len": tmpl["lap_len"],
+            "geometry_source": "template",
+            "synthetic_layout": bool(tmpl.get("synthetic_layout")),
             "start_finish": {"x": track_points[0]["x"], "y": track_points[0]["y"]}
         }
 
@@ -725,4 +810,5 @@ def generate_track_geometry(circuit_id: str, lap_time: float) -> Dict[str, Any]:
             if "name" in c and (not c.get("id") or c.get("id") == "Turn"):
                 c["id"] = f"T{c['name'].replace('Turn ', '').split()[0]}"
 
+    track_data["geometry_source"] = "accurate"
     return track_data
